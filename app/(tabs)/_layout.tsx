@@ -19,15 +19,15 @@ export default function TabLayout() {
         header: () => <Header title={getHeaderTitle()} />,
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
+        <Stack.Screen
+          name="index"
+          options={{
           title: 'Marathon',
-        }}
-      />
-      <Stack.Screen
-        name="[marathonId]"
-      />
-    </Stack>
+          }}
+        />
+        <Stack.Screen
+          name="[marathonId]"
+        />
+      </Stack>
   );
 }

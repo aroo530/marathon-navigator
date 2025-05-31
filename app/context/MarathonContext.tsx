@@ -91,7 +91,7 @@ function useMarathon() {
     throw new Error('useMarathon must be used within a MarathonProvider');
   }
   return context;
-}
+} 
 
 export { MarathonProvider, useMarathon };
 export default MarathonProvider; 

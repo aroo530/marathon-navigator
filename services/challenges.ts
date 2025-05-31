@@ -28,7 +28,7 @@ export type ChallengeWithProgress = Challenge & {
     score?: {
         points: number;
         percentage?: number;
-    };
+};
 };
 
 export const fetchMarathonChallenges = async (

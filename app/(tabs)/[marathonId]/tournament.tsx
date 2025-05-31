@@ -1,53 +1,330 @@
 // app/(tabs)/marathon/tournament.tsx - Tournament Screen
+import { useAuth } from '@/app/context/AuthContext';
+import { Colors } from '@/constants/Theme';
+import { Tournament, TournamentMatch, canUpdateMatchResults, getCurrentTournament, updateMatchResult } from '@/services/tournamentService';
+import { format } from 'date-fns';
 import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useMarathon } from "../../context/MarathonContext";
+
+type ConfirmationModalProps = {
+  visible: boolean;
+  match: TournamentMatch;
+  newWinnerId: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+const ConfirmationModal = ({ visible, match, newWinnerId, onConfirm, onCancel }: ConfirmationModalProps) => {
+  if (!visible || !match || newWinnerId === null) return null;
+
+  const currentWinnerName = match.winner_family_id === match.family1_id ? match.family1_name : match.family2_name;
+  const newWinnerName = newWinnerId === match.family1_id ? match.family1_name : match.family2_name;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Change Match Result?</Text>
+          <Text style={styles.modalText}>
+            Are you sure you want to change the winner from{' '}
+            <Text style={styles.teamHighlight}>{currentWinnerName}</Text> to{' '}
+            <Text style={styles.teamHighlight}>{newWinnerName}</Text>?
+          </Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onCancel}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.confirmButton]}
+              onPress={onConfirm}
+            >
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function TournamentScreen() {
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
-  
+  const currentMarathonId = marathonId || selectedMarathon?.id;
+
+  const { userProfile } = useAuth();
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState(1);
+  const [confirmationModal, setConfirmationModal] = useState<{
+    visible: boolean;
+    match: TournamentMatch | null;
+    newWinnerId: number | null;
+  }>({
+    visible: false,
+    match: null,
+    newWinnerId: null
+  });
+
+  // Mock weeks - in a real app, you would fetch this from your backend
+  const weeks = [1, 2, 3, 4];
+
+  useEffect(() => {
+    loadTournament();
+  }, [marathonId, selectedWeek]);
+
+  const loadTournament = async () => {
+    try {
+      console.log('getting tournament', Number(currentMarathonId), selectedWeek)
+      setLoading(true);
+      const data = await getCurrentTournament(Number(currentMarathonId), selectedWeek);
+      setTournament(data);
+    } catch (error) {
+      console.error('Error loading tournament:', error);
+      Alert.alert('Error', 'Failed to load tournament data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadTournament();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleUpdateMatchResult = async (match: TournamentMatch, winnerFamilyId: number) => {
+    if (!tournament || !userProfile || !canUpdateMatchResults(userProfile.role)) {
+      Alert.alert('Error', 'You do not have permission to update match results');
+      return;
+    }
+
+    // If match is completed and winner is being changed, show confirmation
+    if (match.status === 'completed' && match.winner_family_id !== winnerFamilyId) {
+      setConfirmationModal({
+        visible: true,
+        match,
+        newWinnerId: winnerFamilyId
+      });
+      return;
+    }
+
+    await updateMatchWinner(match, winnerFamilyId);
+  };
+
+  const updateMatchWinner = async (match: TournamentMatch, winnerFamilyId: number) => {
+    const loserFamilyId = winnerFamilyId === match.family1_id ? match.family2_id : match.family1_id;
+
+    try {
+      const result = await updateMatchResult(
+        tournament!.id,
+        selectedWeek,
+        winnerFamilyId,
+        loserFamilyId,
+        userProfile!.id
+      );
+
+      if (result.success) {
+        await loadTournament();
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Error', 'Failed to update match result');
+      }
+    } catch (error) {
+      console.error('Error updating match result:', error);
+      Alert.alert('Error', 'Failed to update match result');
+    }
+  };
+
+  const handleConfirmationResponse = async (confirmed: boolean) => {
+    const { match, newWinnerId } = confirmationModal;
+    setConfirmationModal({ visible: false, match: null, newWinnerId: null });
+
+    if (confirmed && match && newWinnerId) {
+      await updateMatchWinner(match, newWinnerId);
+    }
+  };
+
+  const renderMatch = (match: TournamentMatch) => {
+    const isAdmin = userProfile?.role === 'admin';
+    const isCompleted = match.status === 'completed';
+    const family1Won = match.winner_family_id === match.family1_id;
+    const family2Won = match.winner_family_id === match.family2_id;
+
+    return (
+      <View key={match.match_id} style={styles.matchCard}>
+        <Text style={styles.matchTime}>
+          {format(new Date(match.match_date), 'MMM d, yyyy h:mm a')}
+        </Text>
+
+        <View style={styles.versus}>
+          <TouchableOpacity
+            style={[
+              styles.teamButton,
+              family1Won && styles.winnerTeam
+            ]}
+            disabled={!isAdmin}
+            onPress={() => handleUpdateMatchResult(match, match.family1_id)}
+          >
+            <Text style={[styles.teamName, family1Won && styles.winnerText]}>
+              {match.family1_name}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.vsText}>VS</Text>
+
+          <TouchableOpacity
+            style={[
+              styles.teamButton,
+              family2Won && styles.winnerTeam
+            ]}
+            disabled={!isAdmin}
+            onPress={() => handleUpdateMatchResult(match, match.family2_id)}
+          >
+            <Text style={[styles.teamName, family2Won && styles.winnerText]}>
+              {match.family2_name}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {isCompleted && (
+          <Text style={styles.resultText}>
+            Winner: {match.winner_family_id === match.family1_id ? match.family1_name : match.family2_name}
+          </Text>
+        )}
+
+        {isAdmin && !isCompleted && (
+          <Text style={styles.adminHint}>Tap a team to set as winner</Text>
+        )}
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.blue[2]} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!tournament) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.centerContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.blue[2]}
+              colors={[Colors.blue[2]]}
+              progressBackgroundColor={Colors.white}
+            />
+          }
+        >
+          <Text style={styles.noTournamentText}>No active tournament found</Text>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Tournament</Text>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.blue[2]}
+            colors={[Colors.blue[2]]}
+            progressBackgroundColor={Colors.white}
+          />
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>{tournament.title}</Text>
+          <Text style={styles.subtitle}>{tournament.description}</Text>
+          <Text style={styles.dates}>
+            {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
+          </Text>
+        </View>
 
-        <View style={styles.tournamentCard}>
-          <Text style={styles.tournamentTitle}>Spring Marathon Cup</Text>
-          <Text style={styles.tournamentSubtitle}>Bracket Stage</Text>
+        <View style={styles.weekSelector}>
+          {weeks.map((week) => (
+            <TouchableOpacity
+              key={week}
+              style={[
+                styles.weekButton,
+                selectedWeek === week && styles.selectedWeekButton
+              ]}
+              onPress={() => setSelectedWeek(week)}
+            >
+              <Text style={[
+                styles.weekButtonText,
+                selectedWeek === week && styles.selectedWeekText
+              ]}>
+                Week {week}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          <View style={styles.matchInfo}>
-            <Text style={styles.matchTitle}>Your Next Match</Text>
-            <View style={styles.versus}>
-              <Text style={styles.playerName}>You</Text>
-              <Text style={styles.vsText}>VS</Text>
-              <Text style={styles.playerName}>Sarah Connor</Text>
-            </View>
-            <Text style={styles.matchTime}>Tomorrow at 9:00 AM</Text>
-          </View>
+        <View style={styles.matchesContainer}>
+          <Text style={styles.sectionTitle}>Week {selectedWeek} Matches</Text>
 
-          <TouchableOpacity style={styles.viewBracketButton}>
-            <Text style={styles.viewBracketText}>View Full Bracket</Text>
-          </TouchableOpacity>
+          {tournament.matches && tournament.matches.length > 0 ? (
+            tournament.matches.map(renderMatch)
+          ) : (
+            <Text style={styles.noMatchesText}>No matches scheduled for this week</Text>
+          )}
         </View>
 
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>Tournament Stats</Text>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Matches Won:</Text>
-            <Text style={styles.statValue}>3</Text>
+            <Text style={styles.statLabel}>Total Matches:</Text>
+            <Text style={styles.statValue}>{tournament.matches?.length || 0}</Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Matches Lost:</Text>
-            <Text style={styles.statValue}>1</Text>
+            <Text style={styles.statLabel}>Completed Matches:</Text>
+            <Text style={styles.statValue}>
+              {tournament.matches?.filter(m => m.status === 'completed').length || 0}
+            </Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Current Round:</Text>
-            <Text style={styles.statValue}>Quarter Finals</Text>
+            <Text style={styles.statLabel}>Status:</Text>
+            <Text style={styles.statValue}>{tournament.status}</Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
+
+      {confirmationModal.visible && confirmationModal.match && confirmationModal.newWinnerId !== null && (
+        <ConfirmationModal
+          visible={confirmationModal.visible}
+          match={confirmationModal.match}
+          newWinnerId={confirmationModal.newWinnerId}
+          onConfirm={() => handleConfirmationResponse(true)}
+          onCancel={() => handleConfirmationResponse(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -55,87 +332,152 @@ export default function TournamentScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.light.background,
   },
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
     padding: 20,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
+    color: Colors.light.textPrimary,
     textAlign: "center",
   },
-  tournamentCard: {
-    backgroundColor: "#fff",
+  subtitle: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  dates: {
+    fontSize: 14,
+    color: Colors.blue[2],
+    textAlign: "center",
+    marginTop: 8,
+  },
+  weekSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  },
+  weekButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: Colors.light.cardBackground,
+  },
+  selectedWeekButton: {
+    backgroundColor: Colors.blue[2],
+  },
+  weekButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+  },
+  selectedWeekText: {
+    color: Colors.white,
+  },
+  matchesContainer: {
     padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 16,
+    color: Colors.light.textPrimary,
+  },
+  matchCard: {
+    backgroundColor: Colors.white,
     borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: "#000",
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  tournamentTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 5,
-  },
-  tournamentSubtitle: {
+  matchTime: {
     fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  matchInfo: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  matchTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
+    color: Colors.light.textSecondary,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   versus: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
-  playerName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    minWidth: 100,
-    textAlign: "center",
-  },
-  vsText: {
-    fontSize: 14,
-    color: "#666",
-    marginHorizontal: 20,
-  },
-  matchTime: {
-    fontSize: 14,
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  viewBracketButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
+  teamButton: {
+    flex: 1,
+    padding: 12,
     borderRadius: 8,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
   },
-  viewBracketText: {
-    color: "#fff",
+  teamName: {
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+    color: Colors.light.textPrimary,
+  },
+  winnerTeam: {
+    backgroundColor: Colors.green[0],
+    borderColor: Colors.green[1],
+  },
+  winnerText: {
+    color: Colors.green[2],
+  },
+  vsText: {
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    marginHorizontal: 12,
+    fontWeight: "600",
+  },
+  resultText: {
+    fontSize: 14,
+    color: Colors.green[2],
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  adminHint: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+    fontStyle: "italic",
+  },
+  noMatchesText: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+    fontStyle: 'italic',
   },
   statsCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
+    margin: 20,
     padding: 20,
     borderRadius: 12,
-    shadowColor: "#000",
+    shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -146,20 +488,98 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
     textAlign: "center",
+    color: Colors.light.textPrimary,
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: Colors.light.cardBorder,
   },
   statLabel: {
     fontSize: 16,
-    color: "#666",
+    color: Colors.light.textSecondary,
   },
   statValue: {
     fontSize: 16,
     fontWeight: "600",
+    color: Colors.light.textPrimary,
+  },
+  noTournamentText: {
+    fontSize: 18,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100%',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.textPrimary,
+    marginBottom: 16,
+  },
+  modalText: {
+    fontSize: 16,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  teamHighlight: {
+    color: Colors.blue[2],
+    fontWeight: '600',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 120,
+  },
+  cancelButton: {
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+  },
+  confirmButton: {
+    backgroundColor: Colors.blue[2],
+  },
+  cancelButtonText: {
+    color: Colors.light.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  confirmButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
+
