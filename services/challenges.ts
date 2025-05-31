@@ -74,7 +74,6 @@ export const updateChallengeScore = async (
     weekChallengeId?: number,
     challengeId?: number,
 ): Promise<void> => {
-    console.log("Updating challenge score", familyId, weekChallengeId, challengeId, pointsAwarded, percentageScore);
     const { error } = await supabase
         .from('family_scores')
         .upsert({

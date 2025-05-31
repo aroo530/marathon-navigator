@@ -9,10 +9,7 @@ import { MarathonProvider } from './context/MarathonContext';
 
 function RootLayoutNav() {
   const { session, isLoading } = useAuth();
-  console.log('session', session);
-  console.log('isLoading', isLoading);
   if (isLoading) {
-    console.log('isLoading');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={Colors.blue[2]} />

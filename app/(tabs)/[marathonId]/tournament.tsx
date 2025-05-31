@@ -1,6 +1,6 @@
 // app/(tabs)/marathon/tournament.tsx - Tournament Screen
 import { useAuth } from '@/app/context/AuthContext';
-import { Colors } from '@/constants/Theme';
+import { BorderRadius, Colors, Font } from '@/constants/Theme';
 import { Tournament, TournamentMatch, canUpdateMatchResults, getCurrentTournament, updateMatchResult } from '@/services/tournamentService';
 import { format } from 'date-fns';
 import { useLocalSearchParams } from 'expo-router';
@@ -85,7 +85,6 @@ export default function TournamentScreen() {
 
   const loadTournament = async () => {
     try {
-      console.log('getting tournament', Number(currentMarathonId), selectedWeek)
       setLoading(true);
       const data = await getCurrentTournament(Number(currentMarathonId), selectedWeek);
       setTournament(data);
@@ -166,12 +165,12 @@ export default function TournamentScreen() {
 
     return (
       <View key={match.match_id} style={styles.matchCard}>
-        <Text style={styles.matchTime}>
+        {/* <Text style={styles.matchTime}>
           {format(new Date(match.match_date), 'MMM d, yyyy h:mm a')}
         </Text>
-
+         */}
         <View style={styles.versus}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[
               styles.teamButton,
               family1Won && styles.winnerTeam
@@ -184,9 +183,11 @@ export default function TournamentScreen() {
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.vsText}>VS</Text>
+          <View style={styles.vsContainer}>
+            <Text style={styles.vsText}>VS</Text>
+          </View>
 
-          <TouchableOpacity
+          <TouchableOpacity 
             style={[
               styles.teamButton,
               family2Won && styles.winnerTeam
@@ -201,9 +202,11 @@ export default function TournamentScreen() {
         </View>
 
         {isCompleted && (
-          <Text style={styles.resultText}>
-            Winner: {match.winner_family_id === match.family1_id ? match.family1_name : match.family2_name}
-          </Text>
+          <View style={styles.resultBadge}>
+            <Text style={styles.resultText}>
+              Winner: {match.winner_family_id === match.family1_id ? match.family1_name : match.family2_name}
+            </Text>
+          </View>
         )}
 
         {isAdmin && !isCompleted && (
@@ -217,7 +220,7 @@ export default function TournamentScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.blue[2]} />
+          <ActivityIndicator size="large" color={Colors.purple[1]} />
         </View>
       </SafeAreaView>
     );
@@ -233,8 +236,8 @@ export default function TournamentScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={Colors.blue[2]}
-              colors={[Colors.blue[2]]}
+              tintColor={Colors.purple[1]}
+              colors={[Colors.purple[1]]}
               progressBackgroundColor={Colors.white}
             />
           }
@@ -253,8 +256,8 @@ export default function TournamentScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.blue[2]}
-            colors={[Colors.blue[2]]}
+            tintColor={Colors.purple[1]}
+            colors={[Colors.purple[1]]}
             progressBackgroundColor={Colors.white}
           />
         }
@@ -289,11 +292,13 @@ export default function TournamentScreen() {
 
         <View style={styles.matchesContainer}>
           <Text style={styles.sectionTitle}>Week {selectedWeek} Matches</Text>
-
+          
           {tournament.matches && tournament.matches.length > 0 ? (
             tournament.matches.map(renderMatch)
           ) : (
-            <Text style={styles.noMatchesText}>No matches scheduled for this week</Text>
+            <View style={styles.noMatchesContainer}>
+              <Text style={styles.noMatchesText}>No matches scheduled for this week</Text>
+            </View>
           )}
         </View>
 
@@ -311,7 +316,9 @@ export default function TournamentScreen() {
           </View>
           <View style={styles.statsRow}>
             <Text style={styles.statLabel}>Status:</Text>
-            <Text style={styles.statValue}>{tournament.status}</Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{tournament.status}</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -344,25 +351,27 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.purple[2],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.cardBorder,
+    borderBottomColor: Colors.purple[3],
   },
   title: {
-    fontSize: 24,
+    fontSize: Font.sizes.h1,
     fontWeight: "bold",
-    color: Colors.light.textPrimary,
+    color: Colors.white,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    color: Colors.light.textSecondary,
+    fontSize: Font.sizes.body,
+    color: Colors.white,
+    opacity: 0.9,
     textAlign: "center",
     marginTop: 4,
   },
   dates: {
-    fontSize: 14,
-    color: Colors.blue[2],
+    fontSize: Font.sizes.caption,
+    color: Colors.white,
+    opacity: 0.8,
     textAlign: "center",
     marginTop: 8,
   },
@@ -379,12 +388,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
   },
   selectedWeekButton: {
-    backgroundColor: Colors.blue[2],
+    backgroundColor: Colors.purple[2],
+    borderColor: Colors.purple[2],
   },
   weekButtonText: {
-    fontSize: 14,
+    fontSize: Font.sizes.caption,
     fontWeight: '600',
     color: Colors.light.textSecondary,
   },
@@ -395,24 +407,30 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: Font.sizes.h2,
+    fontWeight: "700",
     marginBottom: 16,
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
   },
   matchCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: BorderRadius.large,
+    paddingTop: 24,
     padding: 16,
+    paddingBottom: 16,
     marginBottom: 16,
     shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.purple[1],
+    borderRightWidth: 4,
+    borderRightColor: Colors.purple[1],
   },
   matchTime: {
-    fontSize: 14,
+    fontSize: Font.sizes.caption,
     color: Colors.light.textSecondary,
     marginBottom: 12,
     textAlign: 'center',
@@ -423,39 +441,54 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
+  vsContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
   teamButton: {
     flex: 1,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: BorderRadius.medium,
     backgroundColor: Colors.light.cardBackground,
     borderWidth: 1,
     borderColor: Colors.light.cardBorder,
   },
   teamName: {
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     fontWeight: "600",
     textAlign: "center",
     color: Colors.light.textPrimary,
   },
   winnerTeam: {
-    backgroundColor: Colors.green[0],
-    borderColor: Colors.green[1],
+    backgroundColor: Colors.purple[0],
+    borderColor: Colors.purple[1],
   },
   winnerText: {
-    color: Colors.green[2],
+    color: Colors.purple[3],
   },
   vsText: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-    marginHorizontal: 12,
-    fontWeight: "600",
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[3],
+    fontWeight: "700",
+  },
+  resultBadge: {
+    backgroundColor: Colors.purple[0],
+    borderRadius: BorderRadius.small,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   resultText: {
-    fontSize: 14,
-    color: Colors.green[2],
-    fontWeight: "600",
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[3],
+    fontWeight: "700",
     textAlign: "center",
-    marginTop: 8,
   },
   adminHint: {
     fontSize: 12,
@@ -464,47 +497,69 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontStyle: "italic",
   },
+  noMatchesContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.large,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.purple[0],
+    borderStyle: 'dashed',
+  },
   noMatchesText: {
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 20,
     fontStyle: 'italic',
   },
   statsCard: {
     backgroundColor: Colors.white,
     margin: 20,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: BorderRadius.large,
     shadowColor: Colors.light.cardShadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderTopWidth: 4,
+    borderTopColor: Colors.purple[1],
   },
   statsTitle: {
-    fontSize: 18,
+    fontSize: Font.sizes.h2,
     fontWeight: "bold",
     marginBottom: 15,
     textAlign: "center",
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
   },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
   },
   statLabel: {
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     fontWeight: "600",
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
+  },
+  statusBadge: {
+    backgroundColor: Colors.purple[0],
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[3],
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
   noTournamentText: {
     fontSize: 18,
@@ -527,27 +582,29 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: BorderRadius.large,
     padding: 20,
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
+    borderLeftWidth: 6,
+    borderLeftColor: Colors.purple[1],
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: Font.sizes.h2,
     fontWeight: 'bold',
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
     marginBottom: 16,
   },
   modalText: {
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
   },
   teamHighlight: {
-    color: Colors.blue[2],
+    color: Colors.purple[2],
     fontWeight: '600',
   },
   modalButtons: {
@@ -558,7 +615,7 @@ const styles = StyleSheet.create({
   modalButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: BorderRadius.medium,
     minWidth: 120,
   },
   cancelButton: {
@@ -567,17 +624,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.cardBorder,
   },
   confirmButton: {
-    backgroundColor: Colors.blue[2],
+    backgroundColor: Colors.purple[2],
   },
   cancelButtonText: {
     color: Colors.light.textPrimary,
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     fontWeight: '600',
     textAlign: 'center',
   },
   confirmButtonText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: Font.sizes.body,
     fontWeight: '600',
     textAlign: 'center',
   },
