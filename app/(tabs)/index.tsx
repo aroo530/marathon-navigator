@@ -1,75 +1,144 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from "react";
+import {
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import Header from "@/components/Header";
+import MarathonCard from "@/components/marathon/MarathonCard";
+import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
+import { router } from "expo-router";
+import type { Marathon } from "../context/MarathonContext";
+import { useMarathon } from "../context/MarathonContext";
 
 export default function HomeScreen() {
+  const { marathons, loading, refreshMarathons, setSelectedMarathon } = useMarathon();
+  const featuredMarathon = marathons[0];
+
+  const onSelectMarathon = (marathon: Marathon) => {
+    setSelectedMarathon(marathon);
+    router.push(`/${marathon.id}`);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <Header title="Marathons" />
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refreshMarathons} />
+        }
+      >
+        {/* Featured Marathon */}
+        {featuredMarathon && (
+          <TouchableOpacity onPress={() => onSelectMarathon(featuredMarathon)}>
+            <View style={styles.featuredCard}>
+              <View style={styles.featuredContent}>
+                <Text style={styles.featuredTitle}>Active Marathon</Text>
+                <Text style={styles.featuredSubtitle}>
+                  {featuredMarathon.title}
+                </Text>
+                <Text style={styles.endsInText}>
+                  Ends on {new Date(featuredMarathon.end_date).toDateString()}
+                </Text>
+              </View>
+              {featuredMarathon.picture_url && (
+                <Image
+                  source={{ uri: featuredMarathon.picture_url }}
+                  style={styles.featuredImage}
+                />
+              )}
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Available Marathons */}
+        <Text style={styles.sectionTitle}>Available Marathons</Text>
+
+        {loading && <ActivityIndicator size="large" color={Colors.purple[2]} />}
+
+        <View style={styles.marathonList}>
+          {marathons.map((marathon) => (
+            <MarathonCard
+              key={marathon.id}
+              title={marathon.title}
+              description={marathon.description}
+              picture_url={marathon.picture_url || ''}
+              startDate={marathon.start_date}
+              endDate={marathon.end_date}
+              familyCount={marathon.family_count}
+              onPress={() => onSelectMarathon(marathon)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  container: {
+    padding: Spacing.lg,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  featuredCard: {
+    backgroundColor: Colors.purple[3],
+    borderRadius: BorderRadius.large,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    shadowColor: Colors.light.cardShadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  featuredContent: {
+    flex: 1,
+  },
+  featuredTitle: {
+    fontSize: Font.sizes.body,
+    fontWeight: "600",
+    color: Colors.orange[2],
+    marginBottom: 4,
+  },
+  featuredSubtitle: {
+    fontSize: Font.sizes.h2,
+    fontWeight: "700",
+    color: Colors.dark.textPrimary,
+  },
+  endsInText: {
+    fontSize: Font.sizes.caption,
+    color: Colors.yellow[0],
+    marginTop: 4,
+  },
+  featuredImage: {
+    width: 92,
+    height: 92,
+    borderRadius: 500,
+    marginLeft: Spacing.md,
+    backgroundColor: Colors.light.background,
+  },
+  sectionTitle: {
+    fontSize: Font.sizes.h2,
+    fontWeight: "700",
+    color: Colors.blue[3],
+    marginBottom: Spacing.sm,
+  },
+  marathonList: {
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
   },
 });

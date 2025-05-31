@@ -1,29 +1,39 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import { Colors } from '@/constants/Theme';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { FamilyProvider } from './context/FamilyContext';
+import { MarathonProvider } from './context/MarathonContext';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+function RootLayoutNav() {
+  const { session, isLoading } = useAuth();
+  console.log('session', session);
+  console.log('isLoading', isLoading);
+  if (isLoading) {
+    console.log('isLoading');
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.blue[2]} />
+      </View>
+    );
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+    <MarathonProvider>
+      <FamilyProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </FamilyProvider>
+    </MarathonProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
       <StatusBar style="auto" />
-    </ThemeProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
