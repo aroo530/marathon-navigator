@@ -53,14 +53,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: Colors.light.background,
+    backgroundColor: Colors.purple[2],
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.light.textPrimary,
+    color: Colors.white,
   },
   profileButton: {
     height: 36,

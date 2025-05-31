@@ -1,6 +1,6 @@
+import { useAuth } from '@/app/context/AuthContext';
 import { Colors } from '@/constants/Theme';
-import { ScoringConfig, calculatePoints, fetchScoringConfig } from '@/services/challengeConfig';
-import { Challenge } from '@/services/challenges';
+import { Challenge, canUserEditChallenge } from '@/services/challenges';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -28,30 +28,30 @@ export default function ScoreInputModal({
   onClose,
   onSubmit,
 }: Props) {
+  const { userProfile } = useAuth();
   const [completedMembers, setCompletedMembers] = useState('');
   const [manualPoints, setManualPoints] = useState('');
   const [loading, setLoading] = useState(false);
-  const [scoringConfigs, setScoringConfigs] = useState<ScoringConfig[]>([]);
+
+  // Check if user has permission to edit this challenge
+  const canEdit = canUserEditChallenge(challenge, userProfile?.role);
 
   useEffect(() => {
-    if (visible && challenge.uses_percentage_based_scoring) {
-      loadScoringConfigs();
+    if (visible && !canEdit) {
+      Alert.alert(
+        'Access Denied',
+        'You do not have permission to edit this challenge.',
+        [{ text: 'OK', onPress: onClose }]
+      );
     }
-  }, [visible, challenge.id]);
-
-  const loadScoringConfigs = async () => {
-    try {
-      setLoading(true);
-      const configs = await fetchScoringConfig(challenge.id);
-      setScoringConfigs(configs);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load scoring configuration');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [visible, canEdit]);
 
   const handleSubmit = async () => {
+    if (!canEdit) {
+      Alert.alert('Error', 'You do not have permission to edit this challenge');
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -63,8 +63,7 @@ export default function ScoreInputModal({
         }
 
         const percentage = (members / totalFamilyMembers) * 100;
-        const points = calculatePoints(scoringConfigs, percentage);
-        await onSubmit(points, percentage);
+        await onSubmit(challenge.points, percentage);
       } else {
         const points = parseInt(manualPoints);
         if (isNaN(points) || points < 0 || points > challenge.points) {
@@ -72,7 +71,7 @@ export default function ScoreInputModal({
           return;
         }
 
-        await onSubmit(points); // For non-percentage challenges, we set percentage to 100
+        await onSubmit(points);
       }
 
       setCompletedMembers('');
@@ -85,57 +84,7 @@ export default function ScoreInputModal({
     }
   };
 
-  const renderContent = () => {
-    if (loading) {
-      return <ActivityIndicator size="large" color={Colors.blue[2]} />;
-    }
-
-    if (challenge.uses_percentage_based_scoring) {
-      return (
-        <>
-          <Text style={styles.label}>
-            How many family members completed this challenge?
-          </Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="number-pad"
-            value={completedMembers}
-            onChangeText={setCompletedMembers}
-            placeholder={`Enter number (0-${totalFamilyMembers})`}
-          />
-
-          {scoringConfigs.length > 0 && (
-            <View style={styles.scoringInfo}>
-              <Text style={styles.scoringTitle}>Scoring Rules:</Text>
-              {scoringConfigs.map((config) => (
-                <Text key={config.id} style={styles.scoringText}>
-                  {config.min_percentage}%-{config.max_percentage}%: {config.points} points
-                </Text>
-              ))}
-            </View>
-          )}
-        </>
-      );
-    }
-
-    return (
-      <>
-        <Text style={styles.label}>
-          Enter points for this challenge
-        </Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="number-pad"
-          value={manualPoints}
-          onChangeText={setManualPoints}
-          placeholder={`Enter points (0-${challenge.points})`}
-        />
-        <Text style={styles.maxPoints}>
-          Maximum points available: {challenge.points}
-        </Text>
-      </>
-    );
-  };
+  if (!canEdit) return null;
 
   return (
     <Modal
@@ -149,13 +98,48 @@ export default function ScoreInputModal({
           <Text style={styles.title}>Complete Challenge</Text>
           <Text style={styles.challengeTitle}>{challenge.title}</Text>
 
-          {renderContent()}
+          {loading ? (
+            <ActivityIndicator size="large" color={Colors.blue[2]} />
+          ) : challenge.uses_percentage_based_scoring ? (
+            <>
+              <Text style={styles.label}>
+                How many family members completed this challenge?
+              </Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="number-pad"
+                value={completedMembers}
+                onChangeText={setCompletedMembers}
+                placeholder={`Enter number (0-${totalFamilyMembers})`}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.label}>
+                Enter points for this challenge
+              </Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="number-pad"
+                value={manualPoints}
+                onChangeText={setManualPoints}
+                placeholder={`Enter points (0-${challenge.points})`}
+              />
+              <Text style={styles.maxPoints}>
+                Maximum points available: {challenge.points}
+              </Text>
+            </>
+          )}
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
               <Text style={styles.submitButtonText}>Submit</Text>
             </TouchableOpacity>
           </View>
@@ -209,23 +193,6 @@ const styles = StyleSheet.create({
     marginTop: -16,
     marginBottom: 20,
   },
-  scoringInfo: {
-    backgroundColor: Colors.blue[0],
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  scoringTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: Colors.blue[3],
-  },
-  scoringText: {
-    fontSize: 14,
-    color: Colors.blue[3],
-    marginBottom: 4,
-  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -249,6 +216,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     backgroundColor: Colors.blue[2],
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     color: 'white',

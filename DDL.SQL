@@ -1,141 +1,162 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
 CREATE TABLE public.attendance (
-  id bigint primary key generated always as identity,
-  participant_id uuid NULL,
-  week_id integer NULL,
-  recorded_by uuid NULL,
-  attended boolean NULL DEFAULT false,
-  notes text NULL,
-  recorded_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT attendance_participant_id_week_id_key UNIQUE (participant_id, week_id),
-  CONSTRAINT attendance_participant_id_fkey FOREIGN KEY (participant_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-  CONSTRAINT attendance_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES auth.users(id),
-  CONSTRAINT attendance_week_id_fkey FOREIGN KEY (week_id) REFERENCES weeks(id) ON DELETE CASCADE
+  id integer NOT NULL DEFAULT nextval('attendance_id_seq'::regclass),
+  participant_id uuid,
+  week_id integer,
+  recorded_by uuid,
+  attended boolean DEFAULT false,
+  notes text,
+  recorded_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT attendance_pkey PRIMARY KEY (id),
+  CONSTRAINT attendance_participant_id_fkey FOREIGN KEY (participant_id) REFERENCES public.users(id),
+  CONSTRAINT attendance_week_id_fkey FOREIGN KEY (week_id) REFERENCES public.weeks(id),
+  CONSTRAINT attendance_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.users(id)
 );
-CREATE INDEX IF NOT EXISTS idx_attendance_participant_week ON public.attendance USING btree (participant_id, week_id);
-CREATE INDEX IF NOT EXISTS idx_attendance_week_id ON public.attendance USING btree (week_id);
-
 CREATE TABLE public.challenges (
-  id bigint primary key generated always as identity,
-  marathon_id integer NULL,
-  title text NOT NULL,
-  description text NULL,
-  challenge_type text NOT NULL,
-  game_type text NULL,
-  points integer NULL DEFAULT 100,
-  is_general boolean NULL DEFAULT false,
-  uses_percentage_based_scoring boolean NULL DEFAULT false,
-  is_active boolean NULL DEFAULT true,
-  created_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT challenges_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES marathons(id) ON DELETE CASCADE,
-  CONSTRAINT challenges_challenge_type_check CHECK (challenge_type IN ('kahoot', 'project', 'attendance', 'activity', 'game', 'tournament'))
+  id integer NOT NULL DEFAULT nextval('challenges_id_seq'::regclass),
+  marathon_id integer,
+  title character varying NOT NULL,
+  description text,
+  challenge_type character varying NOT NULL CHECK (challenge_type::text = ANY (ARRAY['kahoot'::character varying, 'project'::character varying, 'attendance'::character varying, 'activity'::character varying, 'game'::character varying, 'tournament'::character varying]::text[])),
+  game_type character varying,
+  points integer DEFAULT 100,
+  is_general boolean DEFAULT false,
+  uses_percentage_based_scoring boolean DEFAULT false,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  editable_by_roles ARRAY DEFAULT ARRAY['admin'::text] CHECK (editable_by_roles <@ ARRAY['admin'::text, 'leader'::text, 'participant'::text, 'game_manager'::text]),
+  CONSTRAINT challenges_pkey PRIMARY KEY (id),
+  CONSTRAINT challenges_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES public.marathons(id)
 );
-CREATE INDEX IF NOT EXISTS idx_challenges_marathon_id ON public.challenges USING btree (marathon_id);
-CREATE INDEX IF NOT EXISTS idx_challenges_type ON public.challenges USING btree (challenge_type);
-
 CREATE TABLE public.families (
-  id bigint primary key generated always as identity,
-  marathon_id integer NULL,
-  name text NOT NULL,
-  cover_url text NULL,
-  created_at timestamp with time zone NULL DEFAULT now(),
-  avatar_url text NULL,
-  CONSTRAINT families_marathon_id_name_key UNIQUE (marathon_id, name),
-  CONSTRAINT families_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES marathons(id) ON DELETE CASCADE
+  id integer NOT NULL DEFAULT nextval('families_id_seq'::regclass),
+  marathon_id integer,
+  name character varying NOT NULL,
+  cover_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  avatar_url text,
+  CONSTRAINT families_pkey PRIMARY KEY (id),
+  CONSTRAINT families_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES public.marathons(id)
 );
-CREATE INDEX IF NOT EXISTS idx_families_marathon_id ON public.families USING btree (marathon_id);
-
 CREATE TABLE public.family_scores (
-  id bigint primary key generated always as identity,
-  family_id integer NULL,
-  week_challenge_id integer NULL,
-  points_awarded integer NULL DEFAULT 0,
-  percentage_score numeric(5,2) NULL,
-  notes text NULL,
-  submitted_by uuid NULL,
-  submitted_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT team_scores_family_id_week_challenge_id_key UNIQUE (family_id, week_challenge_id),
-  CONSTRAINT team_scores_family_id_fkey FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
-  CONSTRAINT team_scores_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES auth.users(id),
-  CONSTRAINT team_scores_week_challenge_id_fkey FOREIGN KEY (week_challenge_id) REFERENCES week_challenges(id) ON DELETE CASCADE,
-  CONSTRAINT team_scores_percentage_score_check CHECK (percentage_score IS NULL OR (percentage_score >= 0 AND percentage_score <= 100)),
-  CONSTRAINT team_scores_points_awarded_check CHECK (points_awarded >= 0)
+  id integer NOT NULL DEFAULT nextval('team_scores_id_seq'::regclass),
+  family_id integer,
+  week_challenge_id integer,
+  points_awarded integer DEFAULT 0 CHECK (points_awarded >= 0),
+  percentage_score numeric CHECK (percentage_score IS NULL OR percentage_score >= 0::numeric AND percentage_score <= 100::numeric),
+  notes text,
+  submitted_by uuid,
+  submitted_at timestamp with time zone DEFAULT now(),
+  challenge_id integer,
+  CONSTRAINT family_scores_pkey PRIMARY KEY (id),
+  CONSTRAINT team_scores_family_id_fkey FOREIGN KEY (family_id) REFERENCES public.families(id),
+  CONSTRAINT team_scores_week_challenge_id_fkey FOREIGN KEY (week_challenge_id) REFERENCES public.week_challenges(id),
+  CONSTRAINT team_scores_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES public.users(id),
+  CONSTRAINT family_scores_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id)
 );
-CREATE INDEX IF NOT EXISTS idx_team_scores_family_id ON public.family_scores USING btree (family_id);
-CREATE INDEX IF NOT EXISTS idx_team_scores_week_challenge_id ON public.family_scores USING btree (week_challenge_id);
-
-CREATE VIEW public.marathon_with_family_count AS 
-SELECT m.id,
-       m.title,
-       m.description,
-       m.start_date,
-       m.end_date,
-       m.created_at,
-       m.picture_url,
-       (SELECT count(*) FROM families f WHERE f.marathon_id = m.id) AS family_count
-FROM marathons m;
-
 CREATE TABLE public.marathons (
-  id bigint primary key generated always as identity,
-  title text NOT NULL,
-  description text NULL,
+  id integer NOT NULL DEFAULT nextval('marathons_id_seq'::regclass),
+  title character varying NOT NULL,
+  description text,
   start_date date NOT NULL,
   end_date date NOT NULL,
-  created_at timestamp with time zone NULL DEFAULT now(),
-  picture_url text NULL DEFAULT 'https://qwnkzzsbnfqsjtiqabre.supabase.co/storage/v1/object/public/marathon/marathon_logos/default_marathon_logo.png'
+  created_at timestamp with time zone DEFAULT now(),
+  picture_url text DEFAULT 'https://qwnkzzsbnfqsjtiqabre.supabase.co/storage/v1/object/public/marathon/marathon_logos/default_marathon_logo.png'::text,
+  CONSTRAINT marathons_pkey PRIMARY KEY (id)
 );
-
 CREATE TABLE public.scoring_configs (
-  id bigint primary key generated always as identity,
-  challenge_id integer NULL,
-  min_percentage numeric(5,2) NOT NULL,
-  max_percentage numeric(5,2) NOT NULL,
-  points integer NOT NULL,
-  CONSTRAINT scoring_configs_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES challenges(id) ON DELETE CASCADE,
-  CONSTRAINT scoring_configs_check CHECK (min_percentage >= 0 AND max_percentage <= 100),
-  CONSTRAINT scoring_configs_check1 CHECK (min_percentage <= max_percentage),
-  CONSTRAINT scoring_configs_points_check CHECK (points >= 0)
+  id integer NOT NULL DEFAULT nextval('scoring_configs_id_seq'::regclass),
+  challenge_id integer,
+  min_percentage numeric NOT NULL,
+  max_percentage numeric NOT NULL,
+  points integer NOT NULL CHECK (points >= 0),
+  CONSTRAINT scoring_configs_pkey PRIMARY KEY (id),
+  CONSTRAINT scoring_configs_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id)
 );
-
 CREATE TABLE public.tournament_families (
-  id bigint primary key generated always as identity,
-  tournament_id integer NULL,
-  family_id integer NULL,
-  created_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT tournament_families_tournament_id_family_id_key UNIQUE (tournament_id, family_id),
-  CONSTRAINT tournament_families_family_id_fkey FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
-  CONSTRAINT tournament_families_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+  id integer NOT NULL DEFAULT nextval('tournament_families_id_seq'::regclass),
+  tournament_id integer,
+  family_id integer,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_families_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_families_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_families_family_id_fkey FOREIGN KEY (family_id) REFERENCES public.families(id)
 );
-CREATE INDEX IF NOT EXISTS idx_tournament_families_tournament_id ON public.tournament_families USING btree (tournament_id);
-
 CREATE TABLE public.tournament_match_scores (
-  id bigint primary key generated always as identity,
-  tournament_match_id integer NULL,
-  family_id integer NULL,
-  challenge_id integer NULL,
-  points_awarded integer NULL DEFAULT 0,
-  percentage_score numeric(5,2) NULL,
-  submitted_by uuid NULL,
-  submitted_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT tournament_match_scores_tournament_match_id_family_id_chall_key UNIQUE (tournament_match_id, family_id, challenge_id),
-  CONSTRAINT tournament_match_scores_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES challenges(id) ON DELETE CASCADE,
-  CONSTRAINT tournament_match_scores_family_id_fkey FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE,
-  CONSTRAINT tournament_match_scores_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES auth.users(id),
-  CONSTRAINT tournament_match_scores_tournament_match_id_fkey FOREIGN KEY (tournament_match_id) REFERENCES tournament_matches(id) ON DELETE CASCADE,
-  CONSTRAINT tournament_match_scores_points_awarded_check CHECK (points_awarded >= 0),
-  CONSTRAINT tournament_match_scores_percentage_score_check CHECK (percentage_score IS NULL OR (percentage_score >= 0 AND percentage_score <= 100))
+  id integer NOT NULL DEFAULT nextval('tournament_match_scores_id_seq'::regclass),
+  tournament_match_id integer,
+  family_id integer,
+  challenge_id integer,
+  points_awarded integer DEFAULT 0 CHECK (points_awarded >= 0),
+  percentage_score numeric CHECK (percentage_score IS NULL OR percentage_score >= 0::numeric AND percentage_score <= 100::numeric),
+  submitted_by uuid,
+  submitted_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_match_scores_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_match_scores_tournament_match_id_fkey FOREIGN KEY (tournament_match_id) REFERENCES public.tournament_matches(id),
+  CONSTRAINT tournament_match_scores_family_id_fkey FOREIGN KEY (family_id) REFERENCES public.families(id),
+  CONSTRAINT tournament_match_scores_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id),
+  CONSTRAINT tournament_match_scores_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES public.users(id)
 );
-CREATE INDEX IF NOT EXISTS idx_tournament_match_scores_match_id ON public.tournament_match_scores USING btree (tournament_match_id);
-
 CREATE TABLE public.tournament_matches (
-  id bigint primary key generated always as identity,
-  tournament_id integer NULL,
-  week_id integer NULL,
-  family1_id integer NULL,
-  family2_id integer NULL,
-  winner_family_id integer NULL,
-  match_date timestamp with time zone NULL,
-  status text NULL DEFAULT 'scheduled',
-  notes text NULL,
-  created_at timestamp with time zone NULL DEFAULT now(),
-  CONSTRAINT tournament_matches_family1_id_fkey FOREIGN KEY (family1_id) REFERENCES families(id) ON DELETE CASCADE,
-  CONSTRAINT tournament_matches_family2_id_fkey FOREIGN KEY (family2_id) REFERENCES families(id) ON DELETE CASCADE,
+  id integer NOT NULL DEFAULT nextval('tournament_matches_id_seq'::regclass),
+  tournament_id integer,
+  week_id integer,
+  family1_id integer,
+  family2_id integer,
+  winner_family_id integer,
+  match_date timestamp with time zone,
+  status character varying DEFAULT 'scheduled'::character varying CHECK (status::text = ANY (ARRAY['scheduled'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])),
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournament_matches_pkey PRIMARY KEY (id),
+  CONSTRAINT tournament_matches_tournament_id_fkey FOREIGN KEY (tournament_id) REFERENCES public.tournaments(id),
+  CONSTRAINT tournament_matches_week_id_fkey FOREIGN KEY (week_id) REFERENCES public.weeks(id),
+  CONSTRAINT tournament_matches_family1_id_fkey FOREIGN KEY (family1_id) REFERENCES public.families(id),
+  CONSTRAINT tournament_matches_family2_id_fkey FOREIGN KEY (family2_id) REFERENCES public.families(id),
+  CONSTRAINT tournament_matches_winner_family_id_fkey FOREIGN KEY (winner_family_id) REFERENCES public.families(id)
+);
+CREATE TABLE public.tournaments (
+  id integer NOT NULL DEFAULT nextval('tournaments_id_seq'::regclass),
+  marathon_id integer,
+  title character varying NOT NULL,
+  description text,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  status character varying DEFAULT 'planned'::character varying CHECK (status::text = ANY (ARRAY['planned'::character varying, 'active'::character varying, 'completed'::character varying]::text[])),
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tournaments_pkey PRIMARY KEY (id),
+  CONSTRAINT tournaments_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES public.marathons(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  full_name character varying NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  role character varying DEFAULT 'participant'::character varying CHECK (role::text = ANY (ARRAY['participant'::text, 'leader'::text, 'admin'::text, 'game_manager'::text])),
+  family_id integer,
+  avatar_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_family_id_fkey FOREIGN KEY (family_id) REFERENCES public.families(id)
+);
+CREATE TABLE public.week_challenges (
+  id integer NOT NULL DEFAULT nextval('week_challenges_id_seq'::regclass),
+  week_id integer,
+  challenge_id integer,
+  due_date timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT week_challenges_pkey PRIMARY KEY (id),
+  CONSTRAINT week_challenges_week_id_fkey FOREIGN KEY (week_id) REFERENCES public.weeks(id),
+  CONSTRAINT week_challenges_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id)
+);
+CREATE TABLE public.weeks (
+  id integer NOT NULL DEFAULT nextval('weeks_id_seq'::regclass),
+  marathon_id integer,
+  week_number integer NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT weeks_pkey PRIMARY KEY (id),
+  CONSTRAINT weeks_marathon_id_fkey FOREIGN KEY (marathon_id) REFERENCES public.marathons(id)
+);

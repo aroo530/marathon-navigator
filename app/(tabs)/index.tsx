@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 
-import Header from "@/components/Header";
 import MarathonCard from "@/components/marathon/MarathonCard";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { router } from "expo-router";
@@ -29,7 +28,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header title="Marathons" />
 
       <ScrollView
         contentContainerStyle={styles.container}

@@ -12,6 +12,7 @@ export type Challenge = {
     uses_percentage_based_scoring: boolean;
     is_active: boolean;
     created_at: string;
+    editable_by_roles: string[];  // Array of role names that can edit this challenge
     week_challenge_id?: number;  // ID from the week_challenges table
 };
 
@@ -24,7 +25,10 @@ export type ChallengeWithProgress = Challenge & {
     notes: string | null;
     submitted_by: string | null;
     submitted_at: string;
-
+    score?: {
+        points: number;
+        percentage?: number;
+    };
 };
 
 export const fetchMarathonChallenges = async (
@@ -86,4 +90,10 @@ export const updateChallengeScore = async (
         console.error('Error updating challenge score:', error);
         throw error;
     }
+};
+
+// Helper function to check if a user can edit a challenge
+export const canUserEditChallenge = (challenge: Challenge, userRole?: string | null): boolean => {
+    if (!userRole || !challenge.editable_by_roles) return false;
+    return challenge.editable_by_roles.includes(userRole);
 };
