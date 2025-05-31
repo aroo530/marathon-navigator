@@ -1,5 +1,4 @@
 // app/(tabs)/marathon/index.tsx - Marathon Home Screen
-import Header from "@/components/Header";
 import { router, useLocalSearchParams } from "expo-router";
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -12,7 +11,6 @@ export default function MarathonScreen() {
   if (!selectedMarathon) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Header title="Marathon" />
         <View style={styles.container}>
           <Text style={styles.title}>Marathon not found</Text>
           <TouchableOpacity
@@ -28,7 +26,6 @@ export default function MarathonScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header title={selectedMarathon.title} />
       <View style={styles.container}>
         <Text style={styles.title}>Marathon Dashboard</Text>
         <Text style={styles.subtitle}>Welcome to {selectedMarathon.title}!</Text>

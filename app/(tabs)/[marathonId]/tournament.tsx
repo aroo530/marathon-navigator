@@ -1,5 +1,4 @@
 // app/(tabs)/marathon/tournament.tsx - Tournament Screen
-import Header from "@/components/Header";
 import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -11,7 +10,6 @@ export default function TournamentScreen() {
   
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header title={`${selectedMarathon?.title || 'Marathon'} Tournament`} />
       <View style={styles.container}>
         <Text style={styles.title}>Tournament</Text>
 

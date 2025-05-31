@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getLeaderboardData } from "@/services/leaderboard";
 import { useLocalSearchParams } from "expo-router/build/hooks";
@@ -155,7 +154,6 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header title="Leaderboard" />
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>{selectedMarathon?.title || 'Leaderboard'}</Text>

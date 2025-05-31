@@ -1,5 +1,4 @@
 // app/(tabs)/marathon/challenges.tsx - Challenges Screen
-import Header from "@/components/Header";
 import ScoreInputModal from "@/components/ScoreInputModal";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import {
@@ -168,7 +167,6 @@ export default function ChallengesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Header title={`${selectedMarathon?.title || 'Marathon'} Challenges`} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[2]} />
         </View>
@@ -179,7 +177,6 @@ export default function ChallengesScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Header title={`${selectedMarathon?.title || 'Marathon'} Challenges`} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchChallenges}>
@@ -192,7 +189,6 @@ export default function ChallengesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Header title={`${selectedMarathon?.title || 'Marathon'} Challenges`} />
       <FlatList
         style={styles.container}
         data={[
