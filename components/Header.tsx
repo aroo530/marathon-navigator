@@ -1,5 +1,4 @@
-import { BorderRadius, Colors, Spacing } from '@/constants/Theme';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -29,8 +28,7 @@ export function Header({
   onBack,
   rightElement
 }: HeaderProps) {
-  const theme = useColorScheme() ?? 'light';
-  const iconColor = theme === 'light' ? Colors.light.textPrimary : Colors.dark.textPrimary;
+  const iconColor = Colors.white;
   const insets = useSafeAreaInsets();
 
   const handleBack = () => {
@@ -52,9 +50,9 @@ export function Header({
           )}
           <View style={styles.titleContainer}>
             <ThemedText type="title" style={styles.title}>{title}</ThemedText>
-            {subtitle && (
+            {/* {subtitle && (
               <ThemedText type="subtitle" style={styles.subtitle}>{subtitle}</ThemedText>
-            )}
+            )} */}
           </View>
           {rightElement && (
             <View style={styles.rightElement}>
@@ -71,9 +69,10 @@ const styles = StyleSheet.create({
   header: {
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
+    backgroundColor: Colors.purple[2],
   } as ViewStyle,
   content: {
-    padding: Spacing.lg,
+    padding: Spacing.md,
   } as ViewStyle,
   row: {
     flexDirection: 'row',
@@ -83,15 +82,19 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
     padding: Spacing.xs,
     borderRadius: BorderRadius.medium,
+    // backgroundColor: Colors.white,
   } as ViewStyle,
   titleContainer: {
     flex: 1,
   } as ViewStyle,
   title: {
-    color: Colors.purple[2],
+    fontSize: Font.sizes.h2,
+    color: Colors.white,
   } as TextStyle,
   subtitle: {
     marginTop: Spacing.xs,
+    color: Colors.white,
+    fontSize: Font.sizes.caption,
   } as TextStyle,
   rightElement: {
     marginLeft: Spacing.sm,

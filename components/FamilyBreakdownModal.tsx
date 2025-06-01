@@ -52,10 +52,10 @@ export default function FamilyBreakdownModal({
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons 
-              name="close" 
-              size={24} 
-              color={theme === "light" ? Colors.light.textSecondary : Colors.dark.textSecondary} 
+            <Ionicons
+              name="close"
+              size={24}
+              color={theme === "light" ? Colors.light.textSecondary : Colors.dark.textSecondary}
             />
           </TouchableOpacity>
 

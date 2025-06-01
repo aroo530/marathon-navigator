@@ -1,5 +1,7 @@
 // app/(tabs)/marathon/challenges.tsx - Challenges Screen
 import ScoreInputModal from "@/components/ScoreInputModal";
+
+import { Header } from "@/components/Header";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import {
   type Challenge,
@@ -167,6 +169,7 @@ export default function ChallengesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Header title="Challenges" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[2]} />
         </View>
@@ -177,6 +180,7 @@ export default function ChallengesScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Header title="Challenges" />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchChallenges}>
@@ -188,36 +192,39 @@ export default function ChallengesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <FlatList
-        style={styles.container}
-        data={[
-          { title: 'Current Week Challenges', data: weekChallenges },
-          { title: 'General Challenges', data: generalChallenges }
-        ]}
-        renderItem={({ item: section }) => (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.data.map((challenge) => (
-              <React.Fragment key={challenge.id}>
-                {renderChallengeCard({ item: challenge })}
-              </React.Fragment>
-            ))}
-          </View>
-        )}
-        keyExtractor={(section) => section.title}
-      />
-
-      {selectedChallenge && (
-        <ScoreInputModal
-          visible={modalVisible}
-          challenge={selectedChallenge}
-          totalFamilyMembers={totalFamilyMembers}
-          onClose={handleModalClose}
-          onSubmit={handleScoreSubmit}
+    <>
+      <Header title="Challenges" />
+      <SafeAreaView style={styles.safeArea}>
+        <FlatList
+          style={styles.container}
+          data={[
+            { title: 'Current Week Challenges', data: weekChallenges },
+            { title: 'General Challenges', data: generalChallenges }
+          ]}
+          renderItem={({ item: section }) => (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              {section.data.map((challenge) => (
+                <React.Fragment key={challenge.id}>
+                  {renderChallengeCard({ item: challenge })}
+                </React.Fragment>
+              ))}
+            </View>
+          )}
+          keyExtractor={(section) => section.title}
         />
-      )}
-    </SafeAreaView>
+
+        {selectedChallenge && (
+          <ScoreInputModal
+            visible={modalVisible}
+            challenge={selectedChallenge}
+            totalFamilyMembers={totalFamilyMembers}
+            onClose={handleModalClose}
+            onSubmit={handleScoreSubmit}
+          />
+        )}
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -226,6 +233,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
+
   container: {
     flex: 1,
     padding: Spacing.md,

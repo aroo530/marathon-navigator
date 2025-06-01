@@ -5,7 +5,6 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Tournament, TournamentMatch, canUpdateMatchResults, getCurrentTournament, updateMatchResult } from '@/services/tournamentService';
-import { format } from 'date-fns';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
@@ -175,7 +174,7 @@ export default function TournamentScreen() {
         </Text>
          */}
         <View style={styles.versus}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.teamButton,
               family1Won && styles.winnerTeam
@@ -192,7 +191,7 @@ export default function TournamentScreen() {
             <Text style={styles.vsText}>VS</Text>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.teamButton,
               family2Won && styles.winnerTeam
@@ -257,7 +256,7 @@ export default function TournamentScreen() {
 
   return (
     <View style={styles.container}>
-      <Header 
+      <Header
         title={tournament.title}
         subtitle={tournament.description}
       />
@@ -274,11 +273,11 @@ export default function TournamentScreen() {
           />
         }
       >
-        <View style={styles.dateContainer}>
+        {/* <View style={styles.dateContainer}>
           <ThemedText type="default" style={styles.dates}>
             {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
           </ThemedText>
-        </View>
+        </View> */}
 
         <View style={styles.weekSelector}>
           {weeks.map((week) => (
@@ -302,7 +301,7 @@ export default function TournamentScreen() {
 
         <View style={styles.matchesContainer}>
           <Text style={styles.sectionTitle}>Week {selectedWeek} Matches</Text>
-          
+
           {tournament.matches && tournament.matches.length > 0 ? (
             tournament.matches.map(renderMatch)
           ) : (
@@ -432,10 +431,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.purple[1],
-    borderRightWidth: 4,
-    borderRightColor: Colors.purple[1],
+    // borderLeftWidth: 4,
+    // borderLeftColor: Colors.purple[1],
+    // borderRightWidth: 4,
+    // borderRightColor: Colors.purple[1],
   },
   matchTime: {
     fontSize: Font.sizes.caption,
