@@ -1,5 +1,8 @@
+import { Header } from "@/components/Header";
+import { ThemedText } from "@/components/ThemedText";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getLeaderboardData } from "@/services/leaderboard";
+import { format } from "date-fns";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,6 +10,8 @@ import {
   Image,
   ImageStyle,
   Modal,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextStyle,
@@ -14,7 +19,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMarathon } from "../../context/MarathonContext";
 
 type Family = {
@@ -109,6 +114,7 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
+  const insets = useSafeAreaInsets();
 
   const handleFamilyPress = (family: Family) => {
     setSelectedFamily(family);
@@ -153,27 +159,28 @@ export default function LeaderboardScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{selectedMarathon?.title || 'Leaderboard'}</Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Time Remaining</Text>
-              <Text style={styles.statValue}>
-                {Math.ceil((new Date(selectedMarathon?.end_date || '').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Total Families</Text>
-              <Text style={styles.statValue}>{selectedMarathon?.family_count || 0}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Your Rank</Text>
-              <Text style={styles.statValue}>#4</Text>
-            </View>
-          </View>
+    <View style={styles.container}>
+      <Header 
+        title={selectedMarathon?.title || 'Leaderboard'}
+        subtitle={selectedMarathon?.description}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {}}
+            tintColor={Colors.purple[1]}
+            colors={[Colors.purple[1]]}
+            progressBackgroundColor={Colors.white}
+          />
+        }
+      >
+        <View style={styles.dateContainer}>
+          <ThemedText type="default" style={styles.dates}>
+            {format(new Date(selectedMarathon?.start_date || ''), 'MMM d')} - {format(new Date(selectedMarathon?.end_date || ''), 'MMM d, yyyy')}
+          </ThemedText>
         </View>
 
         {!loading && leaderboardData.length >= 3 && (
@@ -219,55 +226,27 @@ export default function LeaderboardScreen() {
           onClose={() => setModalVisible(false)}
           family={selectedFamily}
         />
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 }
+
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: Colors.light.background,
   } as ViewStyle,
-  container: {
+  scrollView: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
     padding: Spacing.md,
   } as ViewStyle,
-  header: {
+  dateContainer: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     marginBottom: Spacing.md,
-    shadowColor: Colors.light.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    alignItems: 'center',
   } as ViewStyle,
-  title: {
-    fontSize: Font.sizes.h1,
-    fontWeight: "700",
-    color: Colors.teal[2],
-    textAlign: "center",
-    marginBottom: Spacing.lg,
-  } as TextStyle,
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  } as ViewStyle,
-  statItem: {
-    alignItems: "center",
-  } as ViewStyle,
-  statLabel: {
-    fontSize: Font.sizes.caption,
-    color: Colors.light.textSecondary,
-    marginBottom: Spacing.xs,
-  } as TextStyle,
-  statValue: {
-    fontSize: Font.sizes.h2,
-    fontWeight: "700",
-    color: Colors.orange[1],
-  } as TextStyle,
   podiumContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -323,7 +302,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: Colors.teal[2],
+    backgroundColor: Colors.purple[2],
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
   } as ViewStyle,
@@ -349,6 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
+    backgroundColor: Colors.purple[1],
   } as ViewStyle,
   rankText: {
     fontSize: Font.sizes.body,
@@ -377,7 +357,7 @@ const styles = StyleSheet.create({
   familyPoints: {
     fontSize: Font.sizes.body,
     fontWeight: "700",
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
   } as TextStyle,
   modalOverlay: {
     flex: 1,
@@ -402,7 +382,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: Font.sizes.h2,
     fontWeight: "700",
-    color: Colors.light.textPrimary,
+    color: Colors.purple[2],
   } as TextStyle,
   closeButton: {
     width: 32,
@@ -417,7 +397,7 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   } as TextStyle,
   totalPointsCard: {
-    backgroundColor: Colors.blue[0],
+    backgroundColor: Colors.purple[0],
     borderRadius: BorderRadius.medium,
     padding: Spacing.lg,
     alignItems: "center",
@@ -425,18 +405,205 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   totalPointsLabel: {
     fontSize: Font.sizes.caption,
-    color: Colors.blue[3],
+    color: Colors.purple[3],
     marginBottom: Spacing.xs,
   } as TextStyle,
   totalPointsValue: {
     fontSize: 32,
     fontWeight: "700",
-    color: Colors.blue[3],
+    color: Colors.purple[3],
   } as TextStyle,
   podiumAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
   } as ImageStyle,
+  matchCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.large,
+    paddingTop: Spacing.lg,
+    padding: Spacing.md,
+    paddingBottom: Spacing.md,
+    marginBottom: Spacing.md,
+    shadowColor: Colors.light.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.purple[1],
+    borderRightWidth: 4,
+    borderRightColor: Colors.purple[1],
+  } as ViewStyle,
+  versus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm,
+  } as ViewStyle,
+  vsContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: Spacing.xs,
+  } as ViewStyle,
+  teamButton: {
+    flex: 1,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+  } as ViewStyle,
+  teamName: {
+    fontSize: Font.sizes.body,
+    fontWeight: "600",
+    textAlign: "center",
+    color: Colors.light.textPrimary,
+  } as TextStyle,
+  winnerTeam: {
+    backgroundColor: Colors.purple[0],
+    borderColor: Colors.purple[1],
+  } as ViewStyle,
+  winnerText: {
+    color: Colors.purple[3],
+  } as TextStyle,
+  vsText: {
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[3],
+    fontWeight: "700",
+  } as TextStyle,
+  resultBadge: {
+    backgroundColor: Colors.purple[0],
+    borderRadius: BorderRadius.small,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    alignSelf: 'center',
+    marginTop: Spacing.xs,
+  } as ViewStyle,
+  resultText: {
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[3],
+    fontWeight: "700",
+    textAlign: "center",
+  } as TextStyle,
+  adminHint: {
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+    marginTop: Spacing.xs,
+    fontStyle: "italic",
+  } as TextStyle,
+  weekSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  } as ViewStyle,
+  weekButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+  } as ViewStyle,
+  selectedWeekButton: {
+    backgroundColor: Colors.purple[2],
+    borderColor: Colors.purple[2],
+  } as ViewStyle,
+  weekButtonText: {
+    fontSize: Font.sizes.caption,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+  } as TextStyle,
+  selectedWeekText: {
+    color: Colors.white,
+  } as TextStyle,
+  matchesContainer: {
+    padding: Spacing.lg,
+  } as ViewStyle,
+  sectionTitle: {
+    marginBottom: Spacing.md,
+    color: Colors.purple[2],
+  } as TextStyle,
+  noMatchesContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.purple[0],
+    borderStyle: 'dashed',
+  } as ViewStyle,
+  noMatchesText: {
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  } as TextStyle,
+  statsCard: {
+    backgroundColor: Colors.white,
+    margin: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.large,
+    shadowColor: Colors.light.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderTopWidth: 4,
+    borderTopColor: Colors.purple[1],
+  } as ViewStyle,
+  statsTitle: {
+    marginBottom: Spacing.md,
+    textAlign: "center",
+    color: Colors.purple[2],
+  } as TextStyle,
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  } as ViewStyle,
+  statLabel: {
+    color: Colors.light.textSecondary,
+  } as TextStyle,
+  statValue: {
+    color: Colors.purple[2],
+  } as TextStyle,
+  statusBadge: {
+    backgroundColor: Colors.purple[0],
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.medium,
+  } as ViewStyle,
+  statusText: {
+    color: Colors.purple[3],
+    textTransform: 'capitalize',
+  } as TextStyle,
+  noTournamentText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginTop: Spacing.xl,
+  } as TextStyle,
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100%',
+  } as ViewStyle,
+  dates: {
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    textAlign: "center",
+  } as TextStyle,
 });
 

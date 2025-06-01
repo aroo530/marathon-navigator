@@ -143,7 +143,7 @@ export default function ChallengesScreen() {
           </View>
 
           <View style={styles.statusContainer}>
-            <Text style={styles.statusLabel}>Status:</Text>
+            {/* <Text style={styles.statusLabel}>Status:</Text> */}
             <TouchableOpacity
               style={[
                 styles.statusButton,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: Font.sizes.h2,
     fontWeight: '700',
-    color: Colors.blue[3],
+    color: Colors.purple[3],
     marginBottom: Spacing.md,
   },
   challengeCard: {
@@ -287,18 +287,18 @@ const styles = StyleSheet.create({
   challengeTitle: {
     flex: 1,
     fontSize: Font.sizes.h2,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.light.textPrimary,
     marginRight: Spacing.sm,
   },
   pointsBadge: {
-    backgroundColor: Colors.purple[0],
+    backgroundColor: Colors.purple[2],
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.medium,
   },
   pointsText: {
-    color: Colors.purple[3],
+    color: Colors.white,
     fontSize: Font.sizes.caption,
     fontWeight: '600',
   },

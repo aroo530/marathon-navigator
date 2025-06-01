@@ -1,85 +1,99 @@
-import { useAuth } from '@/app/context/AuthContext';
-import { Colors } from '@/constants/Theme';
+import { BorderRadius, Colors, Spacing } from '@/constants/Theme';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-  Image,
   StyleSheet,
-  Text,
+  TextStyle,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedText } from './ThemedText';
+import { ThemedView } from './ThemedView';
 
 type HeaderProps = {
   title: string;
+  subtitle?: string;
+  showBack?: boolean;
+  onBack?: () => void;
+  rightElement?: React.ReactNode;
 };
 
-export default function Header({ title }: HeaderProps) {
-  const { session, userProfile } = useAuth();
+export function Header({
+  title,
+  subtitle,
+  showBack = true,
+  onBack,
+  rightElement
+}: HeaderProps) {
+  const theme = useColorScheme() ?? 'light';
+  const iconColor = theme === 'light' ? Colors.light.textPrimary : Colors.dark.textPrimary;
+  const insets = useSafeAreaInsets();
 
-  const handleProfilePress = () => {
-    router.push('/(tabs)/profile');
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      <TouchableOpacity
-        style={styles.profileButton}
-        onPress={handleProfilePress}
-      >
-        {userProfile?.avatar_url ? (
-          <Image
-            source={{ uri: userProfile.avatar_url }}
-            style={styles.avatar}
-          />
-        ) : (
-          <View style={[styles.avatar, styles.placeholderAvatar]}>
-            <Text style={styles.avatarText}>
-              {session?.user?.email?.[0].toUpperCase()}
-            </Text>
+    <ThemedView style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.content}>
+        <View style={styles.row}>
+          {showBack && (
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color={iconColor} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.titleContainer}>
+            <ThemedText type="title" style={styles.title}>{title}</ThemedText>
+            {subtitle && (
+              <ThemedText type="subtitle" style={styles.subtitle}>{subtitle}</ThemedText>
+            )}
           </View>
-        )}
-      </TouchableOpacity>
-    </View>
+          {rightElement && (
+            <View style={styles.rightElement}>
+              {rightElement}
+            </View>
+          )}
+        </View>
+      </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: Colors.purple[2],
+  header: {
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.white,
-  },
-  profileButton: {
-    height: 36,
-    width: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  avatar: {
-    height: '100%',
-    width: '100%',
-  },
-  placeholderAvatar: {
-    backgroundColor: Colors.blue[1],
-    justifyContent: 'center',
+  } as ViewStyle,
+  content: {
+    padding: Spacing.lg,
+  } as ViewStyle,
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 16,
-    color: Colors.blue[3],
-    fontWeight: 'bold',
-  },
+  } as ViewStyle,
+  backButton: {
+    marginRight: Spacing.sm,
+    padding: Spacing.xs,
+    borderRadius: BorderRadius.medium,
+  } as ViewStyle,
+  titleContainer: {
+    flex: 1,
+  } as ViewStyle,
+  title: {
+    color: Colors.purple[2],
+  } as TextStyle,
+  subtitle: {
+    marginTop: Spacing.xs,
+  } as TextStyle,
+  rightElement: {
+    marginLeft: Spacing.sm,
+  } as ViewStyle,
 });

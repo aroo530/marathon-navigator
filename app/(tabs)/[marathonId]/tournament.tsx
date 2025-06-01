@@ -1,11 +1,15 @@
 // app/(tabs)/marathon/tournament.tsx - Tournament Screen
 import { useAuth } from '@/app/context/AuthContext';
-import { BorderRadius, Colors, Font } from '@/constants/Theme';
+import { Header } from "@/components/Header";
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Tournament, TournamentMatch, canUpdateMatchResults, getCurrentTournament, updateMatchResult } from '@/services/tournamentService';
 import { format } from 'date-fns';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMarathon } from "../../context/MarathonContext";
 
 type ConfirmationModalProps = {
@@ -29,34 +33,35 @@ const ConfirmationModal = ({ visible, match, newWinnerId, onConfirm, onCancel }:
       animationType="fade"
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Change Match Result?</Text>
-          <Text style={styles.modalText}>
+        <ThemedView style={styles.modalContent}>
+          <ThemedText type="title" style={styles.modalTitle}>Change Match Result?</ThemedText>
+          <ThemedText type="default" style={styles.modalText}>
             Are you sure you want to change the winner from{' '}
-            <Text style={styles.teamHighlight}>{currentWinnerName}</Text> to{' '}
-            <Text style={styles.teamHighlight}>{newWinnerName}</Text>?
-          </Text>
+            <ThemedText type="defaultSemiBold" style={styles.teamHighlight}>{currentWinnerName}</ThemedText> to{' '}
+            <ThemedText type="defaultSemiBold" style={styles.teamHighlight}>{newWinnerName}</ThemedText>?
+          </ThemedText>
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={onCancel}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>Cancel</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalButton, styles.confirmButton]}
               onPress={onConfirm}
             >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
+              <ThemedText type="defaultSemiBold" style={styles.confirmButtonText}>Confirm</ThemedText>
             </TouchableOpacity>
           </View>
-        </View>
+        </ThemedView>
       </View>
     </Modal>
   );
 };
 
 export default function TournamentScreen() {
+  const insets = useSafeAreaInsets();
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = marathonId || selectedMarathon?.id;
@@ -218,20 +223,22 @@ export default function TournamentScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Header title="Tournament" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[1]} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!tournament) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Header title="Tournament" />
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.centerContainer}
+          style={styles.scrollView}
+          contentContainerStyle={[styles.centerContainer, { paddingBottom: insets.bottom }]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -244,14 +251,19 @@ export default function TournamentScreen() {
         >
           <Text style={styles.noTournamentText}>No active tournament found</Text>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      <Header 
+        title={tournament.title}
+        subtitle={tournament.description}
+      />
       <ScrollView
-        style={styles.container}
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -262,12 +274,10 @@ export default function TournamentScreen() {
           />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>{tournament.title}</Text>
-          <Text style={styles.subtitle}>{tournament.description}</Text>
-          <Text style={styles.dates}>
+        <View style={styles.dateContainer}>
+          <ThemedText type="default" style={styles.dates}>
             {format(new Date(tournament.start_date), 'MMM d')} - {format(new Date(tournament.end_date), 'MMM d, yyyy')}
-          </Text>
+          </ThemedText>
         </View>
 
         <View style={styles.weekSelector}>
@@ -332,18 +342,18 @@ export default function TournamentScreen() {
           onCancel={() => handleConfirmationResponse(false)}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
   container: {
     flex: 1,
-  },
+    backgroundColor: Colors.light.background,
+  } as ViewStyle,
+  scrollView: {
+    flex: 1,
+  } as ViewStyle,
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -356,13 +366,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.purple[3],
   },
   title: {
-    fontSize: Font.sizes.h1,
+    fontSize: Font.sizes.h2,
     fontWeight: "bold",
     color: Colors.white,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: Font.sizes.body,
+    fontSize: Font.sizes.caption,
     color: Colors.white,
     opacity: 0.9,
     textAlign: "center",
@@ -370,10 +380,8 @@ const styles = StyleSheet.create({
   },
   dates: {
     fontSize: Font.sizes.caption,
-    color: Colors.white,
-    opacity: 0.8,
+    color: Colors.light.textSecondary,
     textAlign: "center",
-    marginTop: 8,
   },
   weekSelector: {
     flexDirection: 'row',
@@ -460,16 +468,16 @@ const styles = StyleSheet.create({
   },
   teamName: {
     fontSize: Font.sizes.body,
-    fontWeight: "600",
+    fontWeight: "500",
     textAlign: "center",
     color: Colors.light.textPrimary,
   },
   winnerTeam: {
-    backgroundColor: Colors.purple[0],
+    backgroundColor: Colors.purple[2],
     borderColor: Colors.purple[1],
   },
   winnerText: {
-    color: Colors.purple[3],
+    color: Colors.white,
   },
   vsText: {
     fontSize: Font.sizes.caption,
@@ -477,7 +485,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   resultBadge: {
-    backgroundColor: Colors.purple[0],
+    // backgroundColor: Colors.purple[0],
     borderRadius: BorderRadius.small,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -487,7 +495,7 @@ const styles = StyleSheet.create({
   resultText: {
     fontSize: Font.sizes.caption,
     color: Colors.purple[3],
-    fontWeight: "700",
+    fontWeight: "500",
     textAlign: "center",
   },
   adminHint: {
@@ -581,40 +589,33 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
-    padding: 20,
+    padding: Spacing.xl,
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
-    borderLeftWidth: 6,
-    borderLeftColor: Colors.purple[1],
+    // borderLeftWidth: 3,
+    // borderLeftColor: Colors.purple[2],
   },
   modalTitle: {
-    fontSize: Font.sizes.h2,
-    fontWeight: 'bold',
-    color: Colors.purple[2],
-    marginBottom: 16,
+    marginBottom: Spacing.md,
+    fontSize: Font.sizes.h1,
   },
   modalText: {
-    fontSize: Font.sizes.body,
-    color: Colors.light.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
+    marginBottom: Spacing.lg,
   },
   teamHighlight: {
     color: Colors.purple[2],
-    fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
+    gap: Spacing.lg,
   },
   modalButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.medium,
     minWidth: 120,
   },
@@ -627,16 +628,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.purple[2],
   },
   cancelButtonText: {
-    color: Colors.light.textPrimary,
-    fontSize: Font.sizes.body,
-    fontWeight: '600',
     textAlign: 'center',
   },
   confirmButtonText: {
     color: Colors.white,
-    fontSize: Font.sizes.body,
-    fontWeight: '600',
     textAlign: 'center',
   },
+  dateContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    alignItems: 'center',
+  } as ViewStyle,
 });
 

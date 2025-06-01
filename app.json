@@ -10,8 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.marathon-navigator",
-      "simulatorId": "null"
+      "bundleIdentifier": "com.anonymous.marathon-navigator"
     },
     "android": {
       "adaptiveIcon": {

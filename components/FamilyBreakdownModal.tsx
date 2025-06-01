@@ -1,23 +1,42 @@
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { BorderRadius, Colors, Spacing } from "@/constants/Theme";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   FlatList,
   Image,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Colors, Spacing, Font } from "@/constants/Theme";
-import { Ionicons } from "@expo/vector-icons";
+
+type BreakdownItem = {
+  activity: string;
+  points: number;
+};
+
+type Family = {
+  name: string;
+  avatarUrl: string;
+  breakdown: BreakdownItem[];
+};
+
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+  family: Family | null;
+};
 
 export default function FamilyBreakdownModal({
   visible,
   onClose,
   family,
-}) {
+}: Props) {
   if (!family) return null;
-
+  const theme = useColorScheme() ?? "light";
   const { name, avatarUrl, breakdown } = family;
 
   return (
@@ -28,29 +47,37 @@ export default function FamilyBreakdownModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
+        <ThemedView style={styles.modalContainer}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons name="close" size={24} color={Colors.dark.textPrimary} />
+            <Ionicons 
+              name="close" 
+              size={24} 
+              color={theme === "light" ? Colors.light.textSecondary : Colors.dark.textSecondary} 
+            />
           </TouchableOpacity>
 
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          <Text style={styles.familyName}>{name}</Text>
+          <ThemedText type="title" style={styles.familyName}>{name}</ThemedText>
 
           <FlatList
             data={breakdown}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => (
               <View style={styles.breakdownItem}>
-                <Text style={styles.breakdownText}>{item.activity}</Text>
-                <Text style={styles.breakdownPoints}>+{item.points}</Text>
+                <ThemedText type="default" style={styles.breakdownText}>
+                  {item.activity}
+                </ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.breakdownPoints}>
+                  +{item.points}
+                </ThemedText>
               </View>
             )}
             contentContainerStyle={styles.breakdownList}
           />
-        </View>
+        </ThemedView>
       </View>
     </Modal>
   );
@@ -64,16 +91,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: Colors.light.background,
-    borderRadius: 12,
+    borderRadius: BorderRadius.large,
     width: "80%",
     padding: Spacing.lg,
     alignItems: "center",
   },
   closeButton: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: Spacing.sm,
+    right: Spacing.sm,
   },
   avatar: {
     width: 64,
@@ -82,9 +108,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   familyName: {
-    fontSize: Font.sizes.h2,
-    fontWeight: "700",
-    color: Colors.purple[2],
     marginBottom: Spacing.md,
   },
   breakdownList: {
@@ -98,12 +121,10 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.cardBorder,
   },
   breakdownText: {
-    fontSize: Font.sizes.body,
-    color: Colors.dark.textPrimary,
+    flex: 1,
+    marginRight: Spacing.sm,
   },
   breakdownPoints: {
-    fontSize: Font.sizes.body,
-    fontWeight: "700",
     color: Colors.green[2],
   },
 });

@@ -1,5 +1,4 @@
 // app/(tabs)/_layout.tsx - Global Stack Navigator
-import Header from '@/components/Header';
 import { Stack, usePathname } from 'expo-router';
 import React from 'react';
 
@@ -16,7 +15,8 @@ export default function TabLayout() {
   return (
     <Stack
       screenOptions={{
-        header: () => <Header title={getHeaderTitle()} />,
+        // no header
+        header: () => null,
       }}
     >
         <Stack.Screen

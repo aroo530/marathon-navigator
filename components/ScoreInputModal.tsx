@@ -1,5 +1,7 @@
 import { useAuth } from '@/app/context/AuthContext';
-import { Colors } from '@/constants/Theme';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Challenge, canUserEditChallenge } from '@/services/challenges';
 import React, { useEffect, useState } from 'react';
 import {
@@ -7,7 +9,6 @@ import {
   Alert,
   Modal,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -94,17 +95,17 @@ export default function ScoreInputModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Complete Challenge</Text>
-          <Text style={styles.challengeTitle}>{challenge.title}</Text>
+        <ThemedView style={styles.modalContent}>
+          <ThemedText type="title" style={styles.title}>Complete Challenge</ThemedText>
+          <ThemedText type="subtitle" style={styles.challengeTitle}>{challenge.title}</ThemedText>
 
           {loading ? (
             <ActivityIndicator size="large" color={Colors.blue[2]} />
           ) : challenge.uses_percentage_based_scoring ? (
             <>
-              <Text style={styles.label}>
+              <ThemedText type="defaultSemiBold" style={styles.label}>
                 How many family members completed this challenge?
-              </Text>
+              </ThemedText>
               <TextInput
                 style={styles.input}
                 keyboardType="number-pad"
@@ -115,9 +116,9 @@ export default function ScoreInputModal({
             </>
           ) : (
             <>
-              <Text style={styles.label}>
+              <ThemedText type="defaultSemiBold" style={styles.label}>
                 Enter points for this challenge
-              </Text>
+              </ThemedText>
               <TextInput
                 style={styles.input}
                 keyboardType="number-pad"
@@ -125,25 +126,25 @@ export default function ScoreInputModal({
                 onChangeText={setManualPoints}
                 placeholder={`Enter points (0-${challenge.points})`}
               />
-              <Text style={styles.maxPoints}>
+              <ThemedText type="default" style={styles.maxPoints}>
                 Maximum points available: {challenge.points}
-              </Text>
+              </ThemedText>
             </>
           )}
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>Cancel</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={loading}
             >
-              <Text style={styles.submitButtonText}>Submit</Text>
+              <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
             </TouchableOpacity>
           </View>
-        </View>
+        </ThemedView>
       </View>
     </Modal>
   );
@@ -157,72 +158,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.lg,
     width: '90%',
     maxWidth: 400,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: Colors.light.textPrimary,
+    marginBottom: Spacing.xs,
   },
   challengeTitle: {
-    fontSize: 18,
-    color: Colors.light.textSecondary,
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: Colors.light.textPrimary,
+    marginBottom: Spacing.xs,
   },
   input: {
     borderWidth: 1,
     borderColor: Colors.light.cardBorder,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 20,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+    fontSize: Font.sizes.body,
+    marginBottom: Spacing.lg,
   },
   maxPoints: {
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-    marginTop: -16,
-    marginBottom: 20,
+    marginTop: -Spacing.md,
+    marginBottom: Spacing.lg,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
+    gap: Spacing.sm,
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.medium,
     backgroundColor: Colors.light.cardBackground,
     borderWidth: 1,
     borderColor: Colors.light.cardBorder,
   },
   cancelButtonText: {
-    color: Colors.light.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: Font.sizes.body,
   },
   submitButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.medium,
     backgroundColor: Colors.blue[2],
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   submitButtonText: {
-    color: 'white',
-    fontSize: 16,
+    color: Colors.white,
+    fontSize: Font.sizes.body,
     fontWeight: '600',
   },
 }); 

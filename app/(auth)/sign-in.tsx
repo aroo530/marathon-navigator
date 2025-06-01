@@ -1,4 +1,6 @@
-import { Colors } from '@/constants/Theme';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -6,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -41,9 +42,9 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to continue</Text>
+      <ThemedView style={styles.content}>
+        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>Sign in to continue</ThemedText>
 
         <View style={styles.form}>
           <TextInput
@@ -53,6 +54,7 @@ export default function SignInScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            placeholderTextColor={Colors.light.textSecondary}
           />
           <TextInput
             style={styles.input}
@@ -60,6 +62,7 @@ export default function SignInScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor={Colors.light.textSecondary}
           />
 
           <TouchableOpacity
@@ -67,19 +70,21 @@ export default function SignInScreen() {
             onPress={handleSignIn}
             disabled={isLoading}
           >
-            <Text style={styles.buttonText}>
+            <ThemedText type="defaultSemiBold" style={styles.buttonText}>
               {isLoading ? 'Signing in...' : 'Sign In'}
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Link href="/sign-up" style={styles.link}>
-              <Text style={styles.linkText}>Sign Up</Text>
+            <ThemedText type="default">Don't have an account? </ThemedText>
+            <Link href="/sign-up" asChild>
+              <TouchableOpacity>
+                <ThemedText type="defaultSemiBold" style={styles.linkText}>Sign Up</ThemedText>
+              </TouchableOpacity>
             </Link>
           </View>
         </View>
-      </View>
+      </ThemedView>
     </KeyboardAvoidingView>
   );
 }
@@ -87,61 +92,50 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: Spacing.lg,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: Colors.light.textPrimary,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
-    fontSize: 18,
-    color: Colors.light.textSecondary,
-    marginBottom: 32,
+    marginBottom: Spacing.xl,
   },
   form: {
-    gap: 16,
+    gap: Spacing.md,
   },
   input: {
-    backgroundColor: '#F5F5F5',
-    padding: 16,
-    borderRadius: 8,
-    fontSize: 16,
+    backgroundColor: Colors.light.cardBackground,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    fontSize: Font.sizes.body,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    color: Colors.light.textPrimary,
   },
   button: {
-    backgroundColor: Colors.blue[2],
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: Colors.purple[2],
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.xs,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: Colors.white,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
-  },
-  footerText: {
-    color: Colors.light.textSecondary,
-  },
-  link: {
-    marginLeft: 4,
+    marginTop: Spacing.md,
   },
   linkText: {
-    color: Colors.blue[2],
-    fontWeight: '600',
+    color: Colors.purple[2],
+    marginLeft: Spacing.xs,
   },
 }); 
