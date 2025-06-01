@@ -6,10 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "marathonnavigator",
-    "userInterfaceStyle": "light",    
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.marathon-navigator"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +38,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2ed863f5-c2f1-4098-ba75-0f7341671f6c"
+      }
     }
   }
 }
