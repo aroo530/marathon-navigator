@@ -3,15 +3,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getLeaderboardData } from "@/services/leaderboard";
 import { format } from "date-fns";
-import { useLocalSearchParams } from "expo-router/build/hooks";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   ImageStyle,
   Modal,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextStyle,
@@ -108,28 +107,30 @@ const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height
 );
 
 export default function LeaderboardScreen() {
-  const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
+  const currentMarathonId = selectedMarathon?.id;
   const [leaderboardData, setLeaderboardData] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
   const insets = useSafeAreaInsets();
 
+  const loadLeaderboardData = async () => {
+    setLoading(true);
+    const data = await getLeaderboardData(Number(currentMarathonId) || 0);
+    console.log('data', data);
+    setLeaderboardData(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadLeaderboardData();
+  }, [currentMarathonId]);
+
   const handleFamilyPress = (family: Family) => {
     setSelectedFamily(family);
     setModalVisible(true);
   };
-
-  useEffect(() => {
-    const fetchLeaderboardData = async () => {
-      setLoading(true);
-      const data = await getLeaderboardData(Number(marathonId) || 0);
-      setLeaderboardData(data);
-      setLoading(false);
-    };
-    fetchLeaderboardData();
-  }, [marathonId]);
 
   const topThree = leaderboardData.slice(0, 3);
   const remaining = leaderboardData.slice(3);
@@ -158,53 +159,39 @@ export default function LeaderboardScreen() {
     </TouchableOpacity>
   );
 
-  return (
-    <View style={styles.container}>
-      <Header 
-        title={selectedMarathon?.title || 'Leaderboard'}
-        subtitle={selectedMarathon?.description}
-      />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: insets.bottom }}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={() => {}}
-            tintColor={Colors.purple[1]}
-            colors={[Colors.purple[1]]}
-            progressBackgroundColor={Colors.white}
-          />
-        }
-      >
+  const renderListHeader = () => {
+    if (!leaderboardData.length) return null;
+
+    const topThree = leaderboardData.slice(0, 3);
+
+    return (
+      <>
         <View style={styles.dateContainer}>
           <ThemedText type="default" style={styles.dates}>
             {format(new Date(selectedMarathon?.start_date || ''), 'MMM d')} - {format(new Date(selectedMarathon?.end_date || ''), 'MMM d, yyyy')}
           </ThemedText>
         </View>
 
-        {!loading && leaderboardData.length >= 3 && (
-          <View style={styles.podiumContainer}>
-            <PodiumItem
-              family={topThree[1]}
-              position="2nd"
-              color={Colors.light.textSecondary}
-              height={120}
-            />
-            <PodiumItem
-              family={topThree[0]}
-              position="1st"
-              color={Colors.yellow[1]}
-              height={140}
-            />
-            <PodiumItem
-              family={topThree[2]}
-              position="3rd"
-              color={Colors.orange[2]}
-              height={100}
-            />
-          </View>
-        )}
+        <View style={styles.podiumContainer}>
+          <PodiumItem
+            family={topThree[1]}
+            position="2nd"
+            color={Colors.light.textSecondary}
+            height={120}
+          />
+          <PodiumItem
+            family={topThree[0]}
+            position="1st"
+            color={Colors.yellow[1]}
+            height={140}
+          />
+          <PodiumItem
+            family={topThree[2]}
+            position="3rd"
+            color={Colors.orange[2]}
+            height={100}
+          />
+        </View>
 
         <View style={styles.leaderboardContainer}>
           <View style={styles.tableHeader}>
@@ -212,21 +199,54 @@ export default function LeaderboardScreen() {
             <Text style={styles.tableHeaderText}>Family</Text>
             <Text style={styles.tableHeaderText}>Points</Text>
           </View>
-
-          <FlatList
-            data={remaining}
-            renderItem={renderLeaderboardItem}
-            keyExtractor={(item) => item.id.toString()}
-            showsVerticalScrollIndicator={false}
-          />
         </View>
+      </>
+    );
+  };
 
-        <FamilyBreakdownModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          family={selectedFamily}
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Header
+          title={selectedMarathon?.title || 'Leaderboard'}
+          subtitle={selectedMarathon?.description}
         />
-      </ScrollView>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.purple[1]} />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Header
+        title={selectedMarathon?.title || 'Leaderboard'}
+        subtitle={selectedMarathon?.description}
+      />
+
+      <FlatList
+        data={leaderboardData.slice(3)}
+        renderItem={renderLeaderboardItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={renderListHeader}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadLeaderboardData}
+            tintColor={Colors.purple[1]}
+            colors={[Colors.purple[1]]}
+            progressBackgroundColor={Colors.white}
+          />
+        }
+      />
+
+      <FamilyBreakdownModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        family={selectedFamily}
+      />
     </View>
   );
 }
@@ -605,5 +625,10 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     textAlign: "center",
   } as TextStyle,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
 });
 
