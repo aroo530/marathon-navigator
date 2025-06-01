@@ -10,14 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.marathon-navigator"
+      "bundleIdentifier": "com.anonymous.marathon-navigator",
+      "simulatorId": "null"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#f8f8f8"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.marathonnavigator"
     },
     "web": {
       "bundler": "metro",
