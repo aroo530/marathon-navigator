@@ -1,16 +1,10 @@
-import type { Family } from "../app/context/FamilyContext";
+import { supabase } from "@/constants/supabaseClient";
+import type { Family } from "../context/FamilyContext";
 
 export const getCurrentFamily = async (marathonId: number): Promise<Family | null> => {
-  // TODO: Remove this placeholder and implement actual family fetching
-  return {
-    id: 1,
-    name: "Test Family",
-    avatar_url: null,
-    marathon_id: marathonId
-  };
 
   // Commented out for testing
-  /*
+
   const { data, error } = await supabase
     .from('families')
     .select('*')
@@ -23,5 +17,13 @@ export const getCurrentFamily = async (marathonId: number): Promise<Family | nul
   }
 
   return data;
-  */
-}; 
+};
+
+export const getFamilyscoreBreakdownData = async (familyId: number, marathonId: number) => {
+  const { data, error } = await supabase
+    .rpc("get_family_score_breakdown", { input_family_id:familyId, input_marathon_id: marathonId });
+  console.log('data', data);
+  if (error) throw error;
+
+  return data;
+};

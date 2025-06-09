@@ -1,130 +1,232 @@
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { BorderRadius, Colors, Spacing } from "@/constants/Theme";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import React from 'react';
 import {
   FlatList,
-  Image,
   Modal,
+  Platform,
   StyleSheet,
+  Text,
+  TextStyle,
   TouchableOpacity,
   View,
-} from "react-native";
+  ViewStyle,
+} from 'react-native';
 
 type BreakdownItem = {
-  activity: string;
-  points: number;
+  source: string;
+  challenge_title: string;
+  points_awarded: number;
+  submitted_at: string;
 };
 
-type Family = {
+interface Family {
+  id: number;
   name: string;
-  avatarUrl: string;
+  totalpoints: number;
   breakdown: BreakdownItem[];
-};
+}
 
-type Props = {
+interface FamilyBreakdownModalProps {
   visible: boolean;
   onClose: () => void;
   family: Family | null;
-};
+}
 
-export default function FamilyBreakdownModal({
+const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
   visible,
   onClose,
   family,
-}: Props) {
+}) => {
   if (!family) return null;
-  const theme = useColorScheme() ?? "light";
-  const { name, avatarUrl, breakdown } = family;
 
   return (
     <Modal
       visible={visible}
+      transparent
       animationType="slide"
-      transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <ThemedView style={styles.modalContainer}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <Ionicons
-              name="close"
-              size={24}
-              color={theme === "light" ? Colors.light.textSecondary : Colors.dark.textSecondary}
-            />
-          </TouchableOpacity>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{family.name}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          <ThemedText type="title" style={styles.familyName}>{name}</ThemedText>
+          {/* Total Points */}
+          <View style={styles.totalPointsCard}>
+            <Text style={styles.totalPointsLabel}>Total Points</Text>
+            <Text style={styles.totalPointsValue}>
+              {family.totalpoints}
+            </Text>
+          </View>
 
+          {/* Breakdown List */}
           <FlatList
-            data={breakdown}
-            keyExtractor={(item, index) => index.toString()}
+            data={family.breakdown}
+            keyExtractor={(item, idx) => `${item.challenge_title}-${idx}`}
+            contentContainerStyle={styles.listContainer}
             renderItem={({ item }) => (
               <View style={styles.breakdownItem}>
-                <ThemedText type="default" style={styles.breakdownText}>
-                  {item.activity}
-                </ThemedText>
-                <ThemedText type="defaultSemiBold" style={styles.breakdownPoints}>
-                  +{item.points}
-                </ThemedText>
+                <Text style={styles.sourceText}>{item.source}</Text>
+                <Text style={styles.challengeText}>
+                  {item.challenge_title}
+                </Text>
+                <Text style={styles.pointsText}>
+                  {item.points_awarded} pts
+                </Text>
+                <Text style={styles.dateText}>
+                  {new Date(item.submitted_at).toLocaleString()}
+                </Text>
               </View>
             )}
-            contentContainerStyle={styles.breakdownList}
           />
-        </ThemedView>
+        </View>
       </View>
     </Modal>
   );
-}
+};
+
+export default FamilyBreakdownModal;
 
 const styles = StyleSheet.create({
-  overlay: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+  modalContent: {
+    width: '90%',
+    maxHeight: '85%',
+    backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
-    width: "80%",
     padding: Spacing.lg,
-    alignItems: "center",
-  },
-  closeButton: {
-    position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.sm,
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    marginBottom: Spacing.md,
-  },
-  familyName: {
-    marginBottom: Spacing.md,
-  },
-  breakdownList: {
-    width: "100%",
-  },
-  breakdownItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: Spacing.sm,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  } as ViewStyle,
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
-  },
-  breakdownText: {
-    flex: 1,
-    marginRight: Spacing.sm,
-  },
-  breakdownPoints: {
+  } as ViewStyle,
+  modalTitle: {
+    // fontFamily: Font.heading.fontFamily,
+    fontWeight: '700',
+    fontSize: Font.sizes.h1,
+    color: Colors.light.textPrimary,
+  } as TextStyle,
+  closeButton: {
+    padding: Spacing.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.light.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+  closeButtonText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+  } as TextStyle,
+
+  totalPointsCard: {
+    backgroundColor: Colors.blue[0],
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.blue[2],
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  } as ViewStyle,
+  totalPointsLabel: {
+    // fontFamily: Font.body.fontFamily,
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  } as TextStyle,
+  totalPointsValue: {
+    // fontFamily: Font.heading.fontFamily,
+    fontSize: Font.sizes.h1,
+    color: Colors.blue[2],
+    fontWeight: '700',
+  } as TextStyle,
+
+  listContainer: {
+    paddingBottom: Spacing.sm,
+  } as ViewStyle,
+  breakdownItem: {
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  } as ViewStyle,
+  sourceText: {
+    // fontFamily: Font.body.fontFamily,
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  } as TextStyle,
+  challengeText: {
+    // fontFamily: Font.body.fontFamily,
+    fontSize: Font.sizes.body,
+    fontWeight: '600',
+    color: Colors.light.textPrimary,
+    marginBottom: Spacing.xs,
+  } as TextStyle,
+  pointsText: {
+    // fontFamily: Font.body.fontFamily,
+    fontSize: Font.sizes.body,
     color: Colors.green[2],
-  },
+    marginBottom: Spacing.xs,
+    fontWeight: '600',
+  } as TextStyle,
+  dateText: {
+    // fontFamily: Font.body.fontFamily,
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    fontStyle: 'italic',
+  } as TextStyle,
 });

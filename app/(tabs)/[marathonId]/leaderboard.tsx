@@ -1,6 +1,8 @@
+import FamilyBreakdownModal from "@/components/FamilyBreakdownModal";
 import { Header } from "@/components/Header";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
+import { getFamilyscoreBreakdownData } from "@/services/familyService";
 import { getLeaderboardData } from "@/services/leaderboard";
 import { format } from "date-fns";
 import React, { useEffect, useState } from "react";
@@ -9,14 +11,13 @@ import {
   FlatList,
   Image,
   ImageStyle,
-  Modal,
   RefreshControl,
   StyleSheet,
   Text,
   TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
+  ViewStyle
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMarathon } from "../../../context/MarathonContext";
@@ -26,7 +27,14 @@ type Family = {
   name: string;
   avatarUrl: string | null;
   rank: number;
-  totalPoints: number;
+  totalpoints: number;
+  breakdown: BreakdownItem[];
+};
+type BreakdownItem = {
+  source: string;
+  challenge_title: string;
+  points_awarded: number;
+  submitted_at: string;
 };
 
 type FamilyMember = {
@@ -49,42 +57,9 @@ type PodiumItemProps = {
   height: number;
 };
 
-const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
-  visible,
-  onClose,
-  family,
-}) => {
-  if (!family) return null;
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{family.name}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.totalPointsCard}>
-            <Text style={styles.totalPointsLabel}>Total Points</Text>
-            <Text style={styles.totalPointsValue}>
-              {family.totalPoints.toLocaleString()}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height }) => (
+
   <View style={[styles.podiumItem, { height }]}>
     <View style={[styles.podiumCircle, { backgroundColor: color }]}>
       {family?.avatarUrl ? (
@@ -101,7 +76,7 @@ const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height
     >
       <Text style={styles.podiumPosition}>{position}</Text>
       <Text style={styles.podiumFamily}>{family?.name}</Text>
-      <Text style={styles.podiumPoints}>{family?.totalPoints?.toLocaleString()}</Text>
+      <Text style={styles.podiumPoints}>{family?.totalpoints}</Text>
     </View>
   </View>
 );
@@ -127,8 +102,10 @@ export default function LeaderboardScreen() {
     loadLeaderboardData();
   }, [currentMarathonId]);
 
-  const handleFamilyPress = (family: Family) => {
-    setSelectedFamily(family);
+  const handleFamilyPress = async (family: Family) => {
+    const familyBreakdown = await getFamilyscoreBreakdownData(family.id, Number(currentMarathonId));
+    setSelectedFamily({ ...family, breakdown: familyBreakdown });
+
     setModalVisible(true);
   };
 
@@ -155,7 +132,7 @@ export default function LeaderboardScreen() {
         </View>
       </View>
 
-      <Text style={styles.familyPoints}>{item.totalPoints}</Text>
+      <Text style={styles.familyPoints}>{item.totalpoints}</Text>
     </TouchableOpacity>
   );
 
@@ -173,24 +150,40 @@ export default function LeaderboardScreen() {
         </View>
 
         <View style={styles.podiumContainer}>
-          <PodiumItem
-            family={topThree[1]}
-            position="2nd"
-            color={Colors.light.textSecondary}
-            height={120}
-          />
-          <PodiumItem
-            family={topThree[0]}
-            position="1st"
-            color={Colors.yellow[1]}
-            height={140}
-          />
-          <PodiumItem
-            family={topThree[2]}
-            position="3rd"
-            color={Colors.orange[2]}
-            height={100}
-          />
+          <TouchableOpacity
+            style={{ ...styles.podiumItem, height: 160 }}
+            onPress={() => handleFamilyPress(topThree[1])}
+          >
+            <PodiumItem
+              family={topThree[1]}
+              position="2nd"
+              color={Colors.light.textSecondary}
+              height={140}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ ...styles.podiumItem, height: 180 }}
+            onPress={() => handleFamilyPress(topThree[0])}
+          >
+            <PodiumItem
+              family={topThree[0]}
+              position="1st"
+              color={Colors.yellow[1]}
+              height={160}
+            />
+          </TouchableOpacity >
+          <TouchableOpacity
+            style={{ ...styles.podiumItem, height: 140 }}
+            onPress={() => handleFamilyPress(topThree[2])}
+          >
+            <PodiumItem
+              family={topThree[2]}
+              position="3rd"
+              color={Colors.orange[2]}
+              height={120}
+            />
+          </TouchableOpacity>
+
         </View>
 
         <View style={styles.leaderboardContainer}>
@@ -269,13 +262,16 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   podiumContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-evenly",
     alignItems: "flex-end",
     marginBottom: Spacing.lg,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: 0,
   } as ViewStyle,
   podiumItem: {
     alignItems: "center",
+    paddingHorizontal: 0,
+    margin: 0,
+    flex: 1
   } as ViewStyle,
   podiumCircle: {
     width: 60,
@@ -283,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: -30,
+    marginBottom: -20,
     zIndex: 1,
     borderWidth: 3,
     borderColor: Colors.white,
@@ -293,32 +289,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   } as TextStyle,
   podiumBase: {
-    width: 80,
+    flex: 1,
     borderRadius: BorderRadius.medium,
     justifyContent: "center",
     alignItems: "center",
+    padding: 16,
     paddingTop: 35,
   } as ViewStyle,
   podiumPosition: {
-    fontSize: Font.sizes.h2,
+    fontSize: Font.sizes.body,
     fontWeight: "700",
     color: Colors.white,
     marginBottom: Spacing.xs,
   } as TextStyle,
   podiumFamily: {
-    fontSize: Font.sizes.caption,
+    fontSize: Font.sizes.body,
     color: Colors.white,
     fontWeight: "500",
   } as TextStyle,
   podiumPoints: {
     fontSize: Font.sizes.caption,
     color: Colors.white,
+    fontWeight: "600",
   } as TextStyle,
   leaderboardContainer: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
-    overflow: "hidden",
-    flex: 1,
+    overflow: "hidden"
   } as ViewStyle,
   tableHeader: {
     flexDirection: "row",
@@ -390,8 +387,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
     padding: Spacing.lg,
-    width: "100%",
-    maxHeight: "80%",
   } as ViewStyle,
   modalHeader: {
     flexDirection: "row",
