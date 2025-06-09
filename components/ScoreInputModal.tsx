@@ -7,12 +7,12 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Modal from 'react-native-modal';
 
 type Props = {
   visible: boolean;
@@ -89,63 +89,65 @@ export default function ScoreInputModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackdropPress={onClose}  // closes modal when tapping outside
+      onBackButtonPress={onClose} // closes modal on Android back button
+      backdropOpacity={0.5} // like "transparent"
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      useNativeDriver={true}
+      style={styles.overlay}
     >
-      <View style={styles.overlay}>
-        <ThemedView style={styles.modalContent}>
-          <ThemedText type="title" style={styles.title}>Complete Challenge</ThemedText>
-          <ThemedText type="subtitle" style={styles.challengeTitle}>{challenge.title}</ThemedText>
+      <ThemedView style={styles.modalContent}>
+        <ThemedText type="title" style={styles.title}>Complete Challenge</ThemedText>
+        <ThemedText type="subtitle" style={styles.challengeTitle}>{challenge.title}</ThemedText>
 
-          {loading ? (
-            <ActivityIndicator size="large" color={Colors.blue[2]} />
-          ) : challenge.uses_percentage_based_scoring ? (
-            <>
-              <ThemedText type="defaultSemiBold" style={styles.label}>
-                How many family members completed this challenge?
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                keyboardType="number-pad"
-                value={completedMembers}
-                onChangeText={setCompletedMembers}
-                placeholder={`Enter number (0-${totalFamilyMembers})`}
-              />
-            </>
-          ) : (
-            <>
-              <ThemedText type="defaultSemiBold" style={styles.label}>
-                Enter points for this challenge
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                keyboardType="number-pad"
-                value={manualPoints}
-                onChangeText={setManualPoints}
-                placeholder={`Enter points (0-${challenge.points})`}
-              />
-              <ThemedText type="default" style={styles.maxPoints}>
-                Maximum points available: {challenge.points}
-              </ThemedText>
-            </>
-          )}
+        {loading ? (
+          <ActivityIndicator size="large" color={Colors.blue[2]} />
+        ) : challenge.uses_percentage_based_scoring ? (
+          <>
+            <ThemedText type="defaultSemiBold" style={styles.label}>
+              How many family members completed this challenge?
+            </ThemedText>
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              value={completedMembers}
+              onChangeText={setCompletedMembers}
+              placeholder={`Enter number (0-${totalFamilyMembers})`}
+            />
+          </>
+        ) : (
+          <>
+            <ThemedText type="defaultSemiBold" style={styles.label}>
+              Enter points for this challenge
+            </ThemedText>
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              value={manualPoints}
+              onChangeText={setManualPoints}
+              placeholder={`Enter points (0-${challenge.points})`}
+            />
+            <ThemedText type="default" style={styles.maxPoints}>
+              Maximum points available: {challenge.points}
+            </ThemedText>
+          </>
+        )}
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>Cancel</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitButton, loading && styles.buttonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
-            </TouchableOpacity>
-          </View>
-        </ThemedView>
-      </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>Cancel</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
     </Modal>
   );
 }
@@ -153,7 +155,6 @@ export default function ScoreInputModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
