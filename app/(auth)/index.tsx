@@ -1,21 +1,141 @@
-import { useAuth } from '@/context/AuthContext';
-import { Redirect, Slot } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import { Link, router } from 'expo-router';
+import { useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 
-export default function AuthLayout() {
-  const { session, isLoading } = useAuth();
+export default function SignInScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
 
-  if (session) {
-    return <Redirect href="/(tabs)" />;
-  }
+    try {
+      setIsLoading(true);
+      await signIn(email, password);
+      router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  return <Slot />;
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ThemedView style={styles.content}>
+        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>Sign in to continue</ThemedText>
+
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholderTextColor={Colors.light.textSecondary}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={Colors.light.textSecondary}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
+            onPress={handleSignIn}
+            disabled={isLoading}
+          >
+            <ThemedText type="defaultSemiBold" style={styles.buttonText}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </ThemedText>
+          </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <ThemedText type="default">Don't have an account? </ThemedText>
+            <Link href="/sign-up" asChild>
+              <TouchableOpacity>
+                <ThemedText type="defaultSemiBold" style={styles.linkText}>Sign Up</ThemedText>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </View>
+      </ThemedView>
+    </KeyboardAvoidingView>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    padding: Spacing.lg,
+    justifyContent: 'center',
+  },
+  title: {
+    marginBottom: Spacing.xs,
+  },
+  subtitle: {
+    marginBottom: Spacing.xl,
+  },
+  form: {
+    gap: Spacing.md,
+  },
+  input: {
+    backgroundColor: Colors.light.cardBackground,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    fontSize: Font.sizes.body,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    color: Colors.light.textPrimary,
+  },
+  button: {
+    backgroundColor: Colors.purple[2],
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: Colors.white,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+  },
+  linkText: {
+    color: Colors.purple[2],
+    marginLeft: Spacing.xs,
+  },
+}); 
