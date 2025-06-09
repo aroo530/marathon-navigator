@@ -20,12 +20,18 @@ export const Colors = {
 
   // Dark theme
   dark: {
-    background: "#121212",
-    textPrimary: "#EEEEEE",
-    textSecondary: "#CCCCCC",
-    cardBackground: "#1E1E1E",
-    cardBorder: "#333333",
+    background: "#FFFFFF",
+    textPrimary: "#212121",
+    textSecondary: "#666666",
+    cardBackground: "#FFFFFF",
+    cardBorder: "#E0E0E0",
     cardShadow: "#000000",
+    // background: "#121212",
+    // textPrimary: "#EEEEEE",
+    // textSecondary: "#CCCCCC",
+    // cardBackground: "#1E1E1E",
+    // cardBorder: "#333333",
+    // cardShadow: "#000000",
   },
 };
 
