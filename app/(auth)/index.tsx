@@ -1,8 +1,21 @@
-// app/(auth)/index.tsx
+import { useAuth } from '@/context/AuthContext';
+import { Redirect, Slot } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 
-import { Redirect } from 'expo-router';
+export default function AuthLayout() {
+  const { session, isLoading } = useAuth();
 
-export default function AuthIndex() {
-  // Redirect to the sign-in page
-  return <Redirect href="/sign-in" />;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (session) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  return <Slot />;
 }

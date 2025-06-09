@@ -3,7 +3,7 @@ import { Colors } from "@/constants/Theme";
 import { router } from 'expo-router';
 import React from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProfileScreen() {
   const { session, userProfile, signOut } = useAuth();

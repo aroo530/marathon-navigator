@@ -1,7 +1,7 @@
-import { useAuth } from '@/app/context/AuthContext';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import { useAuth } from '@/context/AuthContext';
 import { Challenge, canUserEditChallenge } from '@/services/challenges';
 import React, { useEffect, useState } from 'react';
 import {

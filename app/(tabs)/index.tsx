@@ -14,8 +14,8 @@ import {
 import MarathonCard from "@/components/marathon/MarathonCard";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { router } from "expo-router";
-import type { Marathon } from "../context/MarathonContext";
-import { useMarathon } from "../context/MarathonContext";
+import type { Marathon } from "../../context/MarathonContext";
+import { useMarathon } from "../../context/MarathonContext";
 
 export default function HomeScreen() {
   const { marathons, loading, refreshMarathons, setSelectedMarathon } = useMarathon();

@@ -19,7 +19,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMarathon } from "../../context/MarathonContext";
+import { useMarathon } from "../../../context/MarathonContext";
 
 type Family = {
   id: number;

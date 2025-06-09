@@ -2,7 +2,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useMarathon } from "../../context/MarathonContext";
+import { useMarathon } from "../../../context/MarathonContext";
 
 export default function MarathonScreen() {
   const { marathonId } = useLocalSearchParams();

@@ -1,15 +1,15 @@
 // app/(tabs)/marathon/tournament.tsx - Tournament Screen
-import { useAuth } from '@/app/context/AuthContext';
 import { Header } from "@/components/Header";
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import { useAuth } from '@/context/AuthContext';
 import { Tournament, TournamentMatch, canUpdateMatchResults, getCurrentTournament, updateMatchResult } from '@/services/tournamentService';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMarathon } from "../../context/MarathonContext";
+import { useMarathon } from "../../../context/MarathonContext";
 
 type ConfirmationModalProps = {
   visible: boolean;

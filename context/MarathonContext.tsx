@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchAvailableMarathons } from '../../services/marathonService';
+import { fetchAvailableMarathons } from '../services/marathonService';
 
 export type Marathon = {
   id: number;

@@ -38,6 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let unsubscribed = false;
     // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("SESSION",session)
+
       if (!unsubscribed) {
         setSession(session);
         setIsLoading(false);

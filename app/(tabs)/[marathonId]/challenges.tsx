@@ -22,8 +22,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFamily } from "../../context/FamilyContext";
-import { useMarathon } from "../../context/MarathonContext";
+import { useFamily } from "../../../context/FamilyContext";
+import { useMarathon } from "../../../context/MarathonContext";
 
 export default function ChallengesScreen() {
   const { marathonId } = useLocalSearchParams();
