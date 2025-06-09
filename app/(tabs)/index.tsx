@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   featuredSubtitle: {
     fontSize: Font.sizes.h2,
     fontWeight: "700",
-    color: Colors.dark.textPrimary,
+    color: Colors.white,
   },
   endsInText: {
     fontSize: Font.sizes.caption,
