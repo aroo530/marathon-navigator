@@ -7,7 +7,6 @@ import { useMarathon } from '@/context/MarathonContext'; // Assuming path to you
 import * as challengeService from '@/services/challenges';
 import { Family, GameChallenge, GameScoreEntry, RecentGameEntry } from '@/services/challenges';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -16,12 +15,14 @@ import {
     FlatList,
     ScrollView,
     StyleSheet,
+    TextInput,
     TextStyle,
     TouchableOpacity,
     View,
     ViewStyle,
 } from 'react-native';
-
+import { Button, Menu } from 'react-native-paper';
+import Toast from 'react-native-toast-message';
 
 export default function Games() {
     // --- Live data from hooks ---
@@ -29,6 +30,7 @@ export default function Games() {
     const { selectedMarathon } = useMarathon();
     const { userProfile } = useAuth();
     const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
+    const [visible, setVisible] = useState(false);
 
     // --- State updated to use types from the service ---
     const [families, setFamilies] = useState<Family[]>([]);
@@ -38,6 +40,8 @@ export default function Games() {
     const [recent, setRecent] = useState<RecentGameEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFormDisabled, setIsFormDisabled] = useState(true);
+    const [manualPoints, setManualPoints] = useState<string>('');
+    const [existingScore, setExistingScore] = useState<GameScoreEntry | null>(null);
 
     useEffect(() => {
         // --- Check user permissions from live user data ---
@@ -51,6 +55,53 @@ export default function Games() {
             setLoading(false); // No marathon ID, so stop loading
         }
     }, [currentMarathonId, userProfile?.role]); // Refetch if marathon or user role changes
+
+    // Add effect to update form disabled state based on inputs
+    useEffect(() => {
+        if (!userProfile?.id) {
+            setIsFormDisabled(true);
+            return;
+        }
+
+        const userCanManage = challengeService.canManageGames(userProfile.role);
+        if (!userCanManage) {
+            setIsFormDisabled(true);
+            return;
+        }
+
+        const hasValidFamily = selectedFamily !== null;
+        const hasValidChallenge = selectedChallengeId !== null;
+        const hasValidPoints = manualPoints ? !isNaN(parseInt(manualPoints, 10)) && parseInt(manualPoints, 10) > 0 : true;
+
+        setIsFormDisabled(!(hasValidFamily && hasValidChallenge && hasValidPoints));
+    }, [selectedFamily, selectedChallengeId, manualPoints, userProfile]);
+
+    // Add effect to check for existing score when family and challenge are selected
+    useEffect(() => {
+        const checkExistingScore = async () => {
+            if (!selectedFamily || !selectedChallengeId || !currentMarathonId) {
+                setExistingScore(null);
+                return;
+            }
+
+            try {
+                const score = await challengeService.getExistingScore(
+                    currentMarathonId,
+                    selectedFamily,
+                    selectedChallengeId
+                );
+                setExistingScore(score);
+                if (score) {
+                    setManualPoints(score.points_awarded.toString());
+                }
+            } catch (error) {
+                console.error('Error checking existing score:', error);
+                setExistingScore(null);
+            }
+        };
+
+        checkExistingScore();
+    }, [selectedFamily, selectedChallengeId, currentMarathonId]);
 
     const fetchInitialData = async () => {
         setLoading(true);
@@ -86,6 +137,7 @@ export default function Games() {
     };
 
     const handleRefreshRecent = async () => {
+        console.log("Here")
         const updatedRecent = await fetchRecentEntries();
         setRecent(updatedRecent);
     };
@@ -94,44 +146,75 @@ export default function Games() {
         const selectedChallenge = gameChallenges.find(c => c.id === selectedChallengeId);
 
         if (!userProfile?.id) {
-            Alert.alert('Authentication Error', 'Could not identify user. Please try again.');
+            showToast('error', 'Authentication Error', 'Could not identify user. Please try again.');
             return;
         }
 
         if (!selectedFamily || !selectedChallenge) {
-            Alert.alert('Missing Information', 'Please select a family and a game.');
+            showToast('error', 'Missing Information', 'Please select a family and a game.');
+            return;
+        }
+
+        // Parse and validate manual points
+        const pointsToAward = manualPoints ? parseInt(manualPoints, 10) : selectedChallenge.points;
+
+        if (isNaN(pointsToAward) || pointsToAward <= 0) {
+            Alert.alert('Invalid Points', 'Please enter a valid number of points.');
+            return;
+        }
+
+        if (pointsToAward > selectedChallenge.points) {
+            Alert.alert('Invalid Points', `Points cannot exceed the maximum of ${selectedChallenge.points} for this challenge.`);
             return;
         }
 
         setLoading(true);
         try {
-            // --- Use the new service function to add the score ---
-            await challengeService.addGameScore(
-                selectedFamily,
-                selectedChallenge.id,
-                selectedChallenge.points, // Points are now from the challenge object
-                userProfile.id
-            );
+            if (existingScore) {
+                // Update existing score
+                await challengeService.updateGameScore(
+                    existingScore.id,
+                    pointsToAward,
+                    userProfile.id
+                );
+            } else {
+                // Add new score
+                await challengeService.addGameScore(
+                    selectedFamily,
+                    selectedChallenge.id,
+                    pointsToAward,
+                    userProfile.id
+                );
+            }
 
-            // --- Reset form ---
+            // Reset form
             setSelectedFamily(null);
             setSelectedChallengeId(null);
+            setManualPoints('');
+            setExistingScore(null);
 
-            // --- Refresh recent entries ---
+            // Refresh recent entries
             await handleRefreshRecent();
 
-            Alert.alert('Success', `${selectedChallenge.points} points added successfully!`);
-        } catch (error: any) {
+            // Alert.alert(
+            //     'Success',
+            //     existingScore
+            //         ? `Score updated to ${pointsToAward} points!`
+            //         : `${pointsToAward} points added successfully!`
+            // );
+            showToast('success', existingScore
+                ? `Score updated to ${pointsToAward} points!`
+                : `${pointsToAward} points added successfully!`, '');
 
+        } catch (error: any) {
             if (error.code === 'P0001' && error.message?.includes('Cannot have more than 3 game scores')) {
-                Alert.alert(
+                showToast(
+                    'error',
                     'Limit Reached',
                     'You cannot add more than 3 game scores for this family in the current marathon.'
                 );
             } else {
-                console.error('Error adding score:', error);
-
-                Alert.alert('Error', 'Failed to add score. Please try again.');
+                showToast('error', 'Error', 'Failed to save score. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -139,6 +222,17 @@ export default function Games() {
     };
 
     const selectedChallenge = gameChallenges.find(c => c.id === selectedChallengeId);
+    const showToast = (type: 'success' | 'error', title: string, message: string) => {
+        Toast.show({
+            type,
+            text1: title,
+            text2: message,
+            position: 'top',
+            topOffset: 100,
+            visibilityTime: 3000,
+            autoHide: true,
+        });
+    };
 
     if (loading) {
         return (
@@ -167,7 +261,6 @@ export default function Games() {
             >
                 {/* Header Card */}
                 <View style={styles.headerCard}>
-
                     <View style={styles.headerTextContainer}>
                         <ThemedText style={styles.headerTitle}>Game Manager</ThemedText>
                         <ThemedText style={styles.headerSubtitle}>Assign scores to families for game challenges</ThemedText>
@@ -178,25 +271,29 @@ export default function Games() {
                 <View style={styles.card}>
                     <ThemedText style={styles.title}>Add Game Score</ThemedText>
 
-                    {isFormDisabled && (
-                        <View style={styles.disabledOverlay}>
-                            <Ionicons name="lock-closed" size={24} color={Colors.light.textSecondary} />
-                            <ThemedText style={styles.disabledText}>You do not have permission to add scores.</ThemedText>
-                        </View>
-                    )}
-
                     <ThemedText style={styles.label}>Select Family</ThemedText>
                     <View style={styles.pickerWrapper}>
-                        <Picker
-                            selectedValue={selectedFamily}
-                            onValueChange={(val) => setSelectedFamily(val)}
-                            enabled={!loading && !isFormDisabled}
+
+                        <Menu
+                            visible={visible}
+                            onDismiss={() => setVisible(false)}
+                            anchor={
+                                <Button mode="outlined" onPress={() => setVisible(true)}>
+                                    {families.find((f) => f.id === selectedFamily)?.name || 'Choose a family...'}
+                                </Button>
+                            }
                         >
-                            <Picker.Item label="Choose a family..." value={null} />
                             {families.map((f) => (
-                                <Picker.Item key={f.id} label={f.name} value={f.id} />
+                                <Menu.Item
+                                    key={f.id}
+                                    onPress={() => {
+                                        setSelectedFamily(f.id);
+                                        setVisible(false);
+                                    }}
+                                    title={f.name}
+                                />
                             ))}
-                        </Picker>
+                        </Menu>
                     </View>
 
                     <ThemedText style={styles.label}>Select Game Challenge</ThemedText>
@@ -211,7 +308,7 @@ export default function Games() {
                                     selectedChallengeId === challenge.id && styles.gameOptionSelected,
                                 ]}
                                 onPress={() => setSelectedChallengeId(challenge.id)}
-                                disabled={loading || isFormDisabled}
+                                disabled={loading}
                             >
                                 <View style={styles.radioButton}>
                                     {selectedChallengeId === challenge.id && <View style={styles.radioButtonInner} />}
@@ -223,24 +320,58 @@ export default function Games() {
                     )}
 
                     {selectedChallenge && (
-                        <View style={styles.pointsDisplay}>
-                            <ThemedText style={styles.pointsDisplayLabel}>Points to Award:</ThemedText>
-                            <ThemedText style={styles.pointsDisplayValue}>{selectedChallenge.points}</ThemedText>
+                        <View style={styles.pointsSection}>
+                            <ThemedText style={styles.pointsDisplayLabel}>
+                                {existingScore ? 'Update Points:' : 'Points to Award:'}
+                            </ThemedText>
+                            <View style={styles.pointsInputContainer}>
+                                <TextInput
+                                    style={styles.pointsInput}
+                                    placeholder={`Enter points (max ${selectedChallenge.points})`}
+                                    keyboardType="numeric"
+                                    value={manualPoints}
+                                    onChangeText={(text) => {
+                                        const numericValue = text.replace(/[^0-9]/g, '');
+                                        setManualPoints(numericValue);
+                                    }}
+                                    maxLength={3}
+                                    editable={!loading}
+                                />
+                                <ThemedText style={styles.pointsMaxLabel}>
+                                    Max: {selectedChallenge.points}
+                                </ThemedText>
+                            </View>
+                            {existingScore && (
+                                <ThemedText style={styles.existingScoreNote}>
+                                    Previous score: {existingScore.points_awarded} points
+                                </ThemedText>
+                            )}
                         </View>
                     )}
 
                     <TouchableOpacity
-                        style={[styles.button, (loading || isFormDisabled) && styles.buttonDisabled]}
+                        style={[
+                            styles.button,
+                            (loading || isFormDisabled) && styles.buttonDisabled,
+                            existingScore && styles.buttonUpdate
+                        ]}
                         onPress={onSubmit}
                         disabled={loading || isFormDisabled || !selectedFamily || !selectedChallengeId}
                     >
                         {loading ? (
                             <ActivityIndicator size="small" color={Colors.white} />
                         ) : (
-                            <Ionicons name="add" size={20} color={Colors.white} />
+                            <Ionicons
+                                name={existingScore ? "refresh" : "add"}
+                                size={20}
+                                color={Colors.white}
+                            />
                         )}
                         <ThemedText style={styles.buttonText}>
-                            {loading ? 'Adding Score...' : 'Add Score to Family'}
+                            {loading
+                                ? (existingScore ? 'Updating...' : 'Adding Score...')
+                                : (existingScore ? 'Update Score' : 'Add Score to Family')
+                            }
                         </ThemedText>
                     </TouchableOpacity>
                 </View>
@@ -347,8 +478,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     } as TextStyle,
     pickerWrapper: {
-        borderWidth: 1,
-        borderColor: Colors.light.cardBorder,
+        // borderWidth: 1,
+        // borderColor: Colors.light.cardBorder,
         borderRadius: BorderRadius.small,
         overflow: 'hidden',
         marginBottom: Spacing.md,
@@ -394,23 +525,38 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.purple[2],
     } as TextStyle,
-    pointsDisplay: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    pointsSection: {
         backgroundColor: Colors.light.background,
-        padding: Spacing.sm,
+        padding: Spacing.md,
         borderRadius: BorderRadius.small,
         marginVertical: Spacing.md,
     } as ViewStyle,
     pointsDisplayLabel: {
         ...Font.body,
-        color: Colors.light.textSecondary,
-    } as TextStyle,
-    pointsDisplayValue: {
-        ...Font.heading,
         fontSize: Font.sizes.body,
-        color: Colors.green[2],
+        color: Colors.light.textSecondary,
+        marginBottom: Spacing.xs,
+    } as TextStyle,
+    pointsInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: Spacing.xs,
+    } as ViewStyle,
+    pointsInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: Colors.light.cardBorder,
+        borderRadius: BorderRadius.small,
+        padding: Spacing.sm,
+        marginRight: Spacing.sm,
+        ...Font.body,
+        fontSize: Font.sizes.body,
+    } as TextStyle,
+    pointsMaxLabel: {
+        ...Font.body,
+        fontSize: Font.sizes.caption,
+        color: Colors.light.textSecondary,
     } as TextStyle,
     button: {
         flexDirection: 'row',
@@ -422,7 +568,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         marginTop: Spacing.sm,
     } as ViewStyle,
-    buttonDisabled: { opacity: 0.6, backgroundColor: Colors.light.textSecondary },
+    buttonDisabled: {
+        backgroundColor: Colors.light.textSecondary,
+        opacity: 0.5,
+        transform: [{ scale: 0.98 }],
+    } as ViewStyle,
+    buttonUpdate: {
+        backgroundColor: Colors.blue[2],
+    } as ViewStyle,
     buttonText: {
         ...Font.body,
         fontSize: Font.sizes.body,
@@ -507,5 +660,12 @@ const styles = StyleSheet.create({
         marginTop: Spacing.xs,
         color: Colors.light.textSecondary,
         fontWeight: '600'
+    } as TextStyle,
+    existingScoreNote: {
+        ...Font.body,
+        fontSize: Font.sizes.caption,
+        color: Colors.blue[2],
+        marginTop: Spacing.xs,
+        fontStyle: 'italic',
     } as TextStyle,
 });

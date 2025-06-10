@@ -412,6 +412,67 @@ export const transformToRecentEntries = (
     }));
 };
 
+/**
+ * Get existing score for a family and challenge
+ */
+export const getExistingScore = async (
+    marathonId: number,
+    familyId: number,
+    challengeId: number
+): Promise<GameScoreEntry | null> => {
+    const { data, error } = await supabase
+        .from('family_scores')
+        .select(`
+            id,
+            family_id,
+            challenge_id,
+            points_awarded,
+            submitted_at,
+            submitted_by,
+            notes,
+            families!inner(
+                id,
+                name,
+                marathon_id
+            ),
+            challenges!inner(
+                id,
+                title,
+                game_type,
+                challenge_type
+            )
+        `)
+        .eq('families.marathon_id', marathonId)
+        .eq('family_id', familyId)
+        .eq('challenge_id', challengeId)
+        .eq('challenges.challenge_type', 'game')
+        .single();
+
+    if (error) {
+        if (error.code === 'PGRST116') {
+            // No rows returned
+            return null;
+        }
+        console.error('Error fetching existing score:', error);
+        throw error;
+    }
+
+    if (!data) return null;
+
+    return {
+        id: data.id,
+        family_id: data.family_id,
+        family_name: (data.families as any).name,
+        challenge_id: data.challenge_id,
+        challenge_title: (data.challenges as any).title,
+        game_type: (data.challenges as any).game_type || '',
+        points_awarded: data.points_awarded,
+        submitted_at: data.submitted_at,
+        submitted_by: data.submitted_by || '',
+        notes: data.notes || undefined
+    };
+};
+
 /*
 Required RPC Functions to create in Supabase:
 
