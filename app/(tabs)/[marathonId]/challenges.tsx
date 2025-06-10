@@ -1,15 +1,17 @@
-// app/(tabs)/marathon/challenges.tsx - Challenges Screen
+// app/(tabs)/marathon/challenges.tsx
 import { Header } from "@/components/Header";
 import ScoreInputModal from "@/components/ScoreInputModal";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { useAuth } from '@/context/AuthContext';
-
+import { useFamily } from "@/context/FamilyContext";
+import { useMarathon } from "@/context/MarathonContext";
 import {
   type Challenge,
   type ChallengeWithProgress,
   fetchMarathonChallenges,
   updateChallengeScore
 } from '@/services/challenges';
+import { fetchWeeksByMarathonId } from '@/services/marathonService';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,20 +19,23 @@ import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFamily } from "../../../context/FamilyContext";
-import { useMarathon } from "../../../context/MarathonContext";
 
 export default function ChallengesScreen() {
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
-  const currentMarathonId = marathonId || selectedMarathon?.id;
+  const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
   const { currentFamily } = useFamily();
   const { userProfile } = useAuth();
+
+  const [weeks, setWeeks] = useState<{ id: number; week_number: number; start_date: string; end_date: string }[]>([]);
+  const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weekChallenges, setWeekChallenges] = useState<ChallengeWithProgress[]>([]);
@@ -38,22 +43,41 @@ export default function ChallengesScreen() {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // TODO: Calculate based on marathon start date
-  const currentWeekId = 1;
-  // TODO: Get this from the family data
-  const totalFamilyMembers = 4;
+  // 1. Load all weeks & auto-detect current one
+  const loadWeeks = async () => {
+    if (!currentMarathonId) return;
+    try {
+      const allWeeks = await fetchWeeksByMarathonId(currentMarathonId);
+      setWeeks(allWeeks);
 
+      const today = new Date();
+      const current = allWeeks.find(w => {
+        const start = new Date(w.start_date);
+        const end = new Date(w.end_date);
+        return today >= start && today <= end;
+      });
+
+      setSelectedWeekId(current?.id ?? allWeeks[0]?.id ?? null);
+    } catch (err) {
+      console.error('Error loading weeks', err);
+      setError('Could not load weeks.');
+    }
+  };
+
+  // 2. Fetch challenges for selected week
   const fetchChallenges = async () => {
-    if (!currentFamily) return;
+    if (!currentFamily || selectedWeekId == null) return;
     try {
       setLoading(true);
       setError(null);
+
       const { weekChallenges: weekly, generalChallenges: general } =
         await fetchMarathonChallenges(
-          Number(currentMarathonId),
+          currentMarathonId,
           currentFamily.id,
-          currentWeekId
+          selectedWeekId
         );
+
       setWeekChallenges(weekly);
       setGeneralChallenges(general);
     } catch (err) {
@@ -64,24 +88,25 @@ export default function ChallengesScreen() {
     }
   };
 
+  // Kick off weeks load when marathon & family ready
+  useEffect(() => {
+    if (currentMarathonId && currentFamily) {
+      loadWeeks();
+    }
+  }, [currentMarathonId, currentFamily]);
+
+  // Fetch challenges when week selection changes
+  useEffect(() => {
+    fetchChallenges();
+  }, [selectedWeekId, currentFamily]);
+
   const handleChallengePress = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
     setModalVisible(true);
   };
 
-  const handleModalClose = () => {
-    setSelectedChallenge(null);
-    setModalVisible(false);
-  };
-
   const handleScoreSubmit = async (points: number, percentage?: number) => {
     if (!currentFamily || !selectedChallenge) return;
-
-    if (!selectedChallenge.week_challenge_id && !selectedChallenge.is_general) {
-      setError('Challenge is not properly linked to a week');
-      return;
-    }
-
     try {
       await updateChallengeScore(
         currentFamily.id,
@@ -90,65 +115,10 @@ export default function ChallengesScreen() {
         selectedChallenge.week_challenge_id,
         selectedChallenge.id
       );
-
-      // Refresh challenges after update
-      await fetchChallenges();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update challenge status');
-    }
-  };
-
-  useEffect(() => {
-    if (currentMarathonId && currentFamily) {
       fetchChallenges();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update challenge');
     }
-  }, [currentMarathonId, currentFamily, currentWeekId]);
-
-  const renderChallengeCard = ({ item }: { item: ChallengeWithProgress }) => {
-    const isCompleted = !!item.points_awarded;
-    return (
-      <View style={styles.challengeCard}>
-        <View style={styles.challengeHeader}>
-          <Text style={styles.challengeTitle}>{item.title}</Text>
-          <View style={styles.pointsBadge}>
-            <Text style={styles.pointsText}>{item.points} pts</Text>
-          </View>
-        </View>
-
-        <Text style={styles.challengeDescription}>{item.description}</Text>
-
-        <View style={styles.challengeFooter}>
-          <View style={styles.challengeType}>
-            <Ionicons
-              name={item.is_general ? "infinite" : "calendar"}
-              size={16}
-              color={Colors.light.textSecondary}
-            />
-            <Text style={styles.challengeTypeText}>
-              {item.is_general ? "General" : "Weekly"}
-            </Text>
-          </View>
-
-          <View style={styles.statusContainer}>
-            {/* <Text style={styles.statusLabel}>Status:</Text> */}
-            <TouchableOpacity
-              style={[
-                styles.statusButton,
-                isCompleted && styles.statusButtonCompleted
-              ]}
-              onPress={() => handleChallengePress(item)}
-            >
-              <Text style={[
-                styles.statusButtonText,
-                isCompleted && styles.statusButtonTextCompleted
-              ]}>
-                {isCompleted ? 'Completed' : 'Mark Complete'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
   };
 
   if (loading) {
@@ -180,6 +150,34 @@ export default function ChallengesScreen() {
     <>
       <Header title="Challenges" />
       <SafeAreaView style={styles.safeArea}>
+        {/* Week selector */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.weekSelectorContainer}
+          contentContainerStyle={styles.weekSelector}
+        >
+          {weeks.map(week => (
+            <TouchableOpacity
+              key={week.id}
+              style={[
+                styles.weekButton,
+                selectedWeekId === week.id && styles.selectedWeekButton,
+              ]}
+              onPress={() => setSelectedWeekId(week.id)}
+            >
+              <Text
+                style={[
+                  styles.weekButtonText,
+                  selectedWeekId === week.id && styles.selectedWeekText,
+                ]}
+              >
+                Week {week.week_number}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {/* Challenges list */}
         <FlatList
           style={styles.container}
           data={[
@@ -190,25 +188,60 @@ export default function ChallengesScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
               {section.data.map((challenge) => (
-                <React.Fragment key={challenge.id}>
-                  {renderChallengeCard({ item: challenge })}
-                </React.Fragment>
+                <View key={challenge.id}>{/* renderChallengeCard */}
+                  <View style={styles.challengeCard}>
+                    {/* ...same as before... */}
+                    <View style={styles.challengeHeader}>
+                      <Text style={styles.challengeTitle}>{challenge.title}</Text>
+                      <View style={styles.pointsBadge}>
+                        <Text style={styles.pointsText}>{challenge.points} pts</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.challengeDescription}>{challenge.description}</Text>
+                    <View style={styles.challengeFooter}>
+                      <View style={styles.challengeType}>
+                        <Ionicons
+                          name={challenge.is_general ? "infinite" : "calendar"}
+                          size={16}
+                          color={Colors.light.textSecondary}
+                        />
+                        <Text style={styles.challengeTypeText}>
+                          {challenge.is_general ? "General" : "Weekly"}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[
+                          styles.statusButton,
+                          !!challenge.points_awarded && styles.statusButtonCompleted
+                        ]}
+                        onPress={() => handleChallengePress(challenge)}
+                      >
+                        <Text style={[
+                          styles.statusButtonText,
+                          !!challenge.points_awarded && styles.statusButtonTextCompleted
+                        ]}>
+                          {challenge.points_awarded ? 'Completed' : 'Mark Complete'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
               ))}
             </View>
           )}
           keyExtractor={(section) => section.title}
         />
 
-        {selectedChallenge && (
+        {!!selectedChallenge && (
           <ScoreInputModal
             visible={modalVisible}
             challenge={selectedChallenge}
-            totalFamilyMembers={totalFamilyMembers}
-            onClose={handleModalClose}
+            totalFamilyMembers={currentFamily?.member_count ?? 1}
+            onClose={() => setModalVisible(false)}
             onSubmit={handleScoreSubmit}
           />
         )}
-      </SafeAreaView>
+      </SafeAreaView >
     </>
   );
 }
@@ -341,6 +374,40 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusButtonTextCompleted: {
+    color: Colors.white,
+  },
+  weekSelectorContainer: {
+    width: '100%',
+    flexGrow: 0,            // prevent ScrollView from stretching vertically
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  },
+  weekSelector: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: Spacing.md,
+    backgroundColor: Colors.white,
+  },
+  weekButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.large,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    marginRight: Spacing.sm,
+  },
+  selectedWeekButton: {
+    backgroundColor: Colors.purple[2],
+    borderColor: Colors.purple[2],
+  },
+  weekButtonText: {
+    fontSize: Font.sizes.caption,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+  },
+  selectedWeekText: {
     color: Colors.white,
   },
 });
