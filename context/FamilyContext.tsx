@@ -5,6 +5,7 @@ export type Family = {
   name: string;
   avatar_url: string | null;
   marathon_id: number;
+  member_count?: number
 };
 
 type FamilyContextType = {

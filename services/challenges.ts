@@ -28,7 +28,7 @@ export type ChallengeWithProgress = Challenge & {
     score?: {
         points: number;
         percentage?: number;
-};
+    };
 };
 
 export const fetchMarathonChallenges = async (
@@ -45,7 +45,6 @@ export const fetchMarathonChallenges = async (
             p_family_id: familyId,
             p_week_id: weekId || null
         });
-
     if (error) {
         console.error('Error fetching challenges:', error);
         throw error;
@@ -70,7 +69,7 @@ export const fetchMarathonChallenges = async (
 export const updateChallengeScore = async (
     familyId: number,
     pointsAwarded: number,
-    percentageScore?: number, 
+    percentageScore?: number,
     weekChallengeId?: number,
     challengeId?: number,
 ): Promise<void> => {

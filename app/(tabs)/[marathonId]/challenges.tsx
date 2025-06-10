@@ -1,15 +1,15 @@
 // app/(tabs)/marathon/challenges.tsx - Challenges Screen
-import ScoreInputModal from "@/components/ScoreInputModal";
-
 import { Header } from "@/components/Header";
+import ScoreInputModal from "@/components/ScoreInputModal";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
+import { useAuth } from '@/context/AuthContext';
+
 import {
   type Challenge,
   type ChallengeWithProgress,
   fetchMarathonChallenges,
   updateChallengeScore
 } from '@/services/challenges';
-import { getCurrentFamily } from "@/services/familyService";
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -29,8 +29,8 @@ export default function ChallengesScreen() {
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = marathonId || selectedMarathon?.id;
-
-  const { currentFamily, setCurrentFamily } = useFamily();
+  const { currentFamily } = useFamily();
+  const { userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weekChallenges, setWeekChallenges] = useState<ChallengeWithProgress[]>([]);
@@ -45,7 +45,6 @@ export default function ChallengesScreen() {
 
   const fetchChallenges = async () => {
     if (!currentFamily) return;
-
     try {
       setLoading(true);
       setError(null);
@@ -55,7 +54,6 @@ export default function ChallengesScreen() {
           currentFamily.id,
           currentWeekId
         );
-
       setWeekChallenges(weekly);
       setGeneralChallenges(general);
     } catch (err) {
@@ -99,19 +97,6 @@ export default function ChallengesScreen() {
       setError(err instanceof Error ? err.message : 'Failed to update challenge status');
     }
   };
-
-  useEffect(() => {
-    async function initializeFamily() {
-      if (currentMarathonId && !currentFamily) {
-        const family = await getCurrentFamily(Number(currentMarathonId));
-        if (family) {
-          setCurrentFamily(family);
-        }
-      }
-    }
-
-    initializeFamily();
-  }, [currentMarathonId, currentFamily]);
 
   useEffect(() => {
     if (currentMarathonId && currentFamily) {

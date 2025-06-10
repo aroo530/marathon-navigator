@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (session?.user) {
+
         const profile = await getUserProfile(session.user.id);
         setUserProfile(profile);
       } else {
@@ -38,7 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let unsubscribed = false;
     // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("SESSION",session)
 
       if (!unsubscribed) {
         setSession(session);
@@ -48,7 +48,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!unsubscribed) setSession(session);
+      if (!unsubscribed) {
+        setSession(session);
+
+      }
     });
 
     return () => {

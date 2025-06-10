@@ -12,7 +12,6 @@ export default function TabLayout() {
             </View>
         );
     }
-    console.log(session)
     if (session) {
         return <Redirect href="/(tabs)" />;
     }

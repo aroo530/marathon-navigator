@@ -93,7 +93,6 @@ export default function LeaderboardScreen() {
   const loadLeaderboardData = async () => {
     setLoading(true);
     const data = await getLeaderboardData(Number(currentMarathonId) || 0);
-    console.log('data', data);
     setLeaderboardData(data);
     setLoading(false);
   };
