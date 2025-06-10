@@ -37,7 +37,7 @@ export default function SignUpScreen() {
       Alert.alert(
         'Success',
         'Please check your email for verification instructions',
-        [{ text: 'OK', onPress: () => router.replace('/sign-in') }]
+        [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
       );
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'An error occurred');
@@ -91,7 +91,7 @@ export default function SignUpScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/sign-in" style={styles.link}>
+            <Link href="/(auth)" style={styles.link}>
               <Text style={styles.linkText}>Sign In</Text>
             </Link>
           </View>
