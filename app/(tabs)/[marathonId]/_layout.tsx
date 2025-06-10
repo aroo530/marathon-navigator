@@ -42,6 +42,15 @@ export default function MarathonLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name='gemes'
+        options={{
+          title: "Games",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="medal" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
