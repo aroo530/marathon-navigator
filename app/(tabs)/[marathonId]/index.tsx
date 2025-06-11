@@ -44,37 +44,37 @@ type FamilyBreakdownModalProps = {
   family: Family | null;
 };
 
-type PodiumItemProps = {
-  family: Family;
-  position: string;
-  color: string;
-  height: number;
-};
+// type PodiumItemProps = {
+//   family: Family;
+//   position: string;
+//   color: string;
+//   height: number;
+// };
 
-const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height }) => {
-  const { t } = useTranslation();
-  return (
-    <View style={[styles.podiumItem, { height }]}>
-      <View style={[styles.podiumCircle, { backgroundColor: color }]}>
-        {family?.avatarurl ? (
-          <Image source={{ uri: family.avatarurl }} style={styles.podiumAvatar} />
-        ) : (
-          <Text style={styles.podiumEmoji}>👨‍👩‍👧‍👦</Text>
-        )}
-      </View>
-      <View
-        style={[
-          styles.podiumBase,
-          { backgroundColor: color, height: height - 60 },
-        ]}
-      >
-        <Text style={styles.podiumPosition}>{position}</Text>
-        <Text style={styles.podiumFamily}>{family?.name}</Text>
-        <Text style={styles.podiumPoints}>{family?.totalpoints}</Text>
-      </View>
-    </View>
-  );
-};
+// const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height }) => {
+//   const { t } = useTranslation();
+//   return (
+//     <View style={[styles.podiumItem, { height }]}>
+//       <View style={[styles.podiumCircle, { backgroundColor: color }]}>
+//         {family?.avatarurl ? (
+//           <Image source={{ uri: family.avatarurl }} style={styles.podiumAvatar} />
+//         ) : (
+//           <Text style={styles.podiumEmoji}>👨‍👩‍👧‍👦</Text>
+//         )}
+//       </View>
+//       <View
+//         style={[
+//           styles.podiumBase,
+//           { backgroundColor: color, height: height - 60 },
+//         ]}
+//       >
+//         <Text style={styles.podiumPosition}>{position}</Text>
+//         <Text style={styles.podiumFamily}>{family?.name}</Text>
+//         <Text style={styles.podiumPoints}>{family?.totalpoints}</Text>
+//       </View>
+//     </View>
+//   );
+// };
 
 export default function LeaderboardScreen() {
   const { t } = useTranslation();
@@ -112,7 +112,7 @@ export default function LeaderboardScreen() {
       onPress={() => handleFamilyPress(item)}
     >
       <View style={styles.rankColumn}>
-        <Text style={styles.rankText}>{index + 4}</Text>
+        <Text style={styles.rankText}>{index + 1}</Text>
       </View>
 
       <View style={styles.familyColumn}>
@@ -147,7 +147,7 @@ export default function LeaderboardScreen() {
           </ThemedText>
         </View>
 
-        <View style={styles.podiumContainer}>
+        {/* <View style={styles.podiumContainer}>
           <TouchableOpacity
             style={{ ...styles.podiumItem, height: 160 }}
             onPress={() => handleFamilyPress(topThree[1])}
@@ -181,7 +181,7 @@ export default function LeaderboardScreen() {
               height={120}
             />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.tableHeader}>
           <View style={styles.rankColumn}>
@@ -222,7 +222,7 @@ export default function LeaderboardScreen() {
 
       <FlatList
         style={styles.leaderboardContainer}
-        data={leaderboardData.slice(3)}
+        data={leaderboardData}
         renderItem={renderLeaderboardItem}
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={renderListHeader}
