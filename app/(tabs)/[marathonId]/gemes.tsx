@@ -7,8 +7,8 @@ import { useMarathon } from '@/context/MarathonContext'; // Assuming path to you
 import * as challengeService from '@/services/challenges';
 import { Family, GameChallenge, GameScoreEntry, RecentGameEntry } from '@/services/challenges';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
@@ -45,65 +45,83 @@ export default function Games() {
     const [manualPoints, setManualPoints] = useState<string>('');
     const [existingScore, setExistingScore] = useState<GameScoreEntry | null>(null);
 
-    useEffect(() => {
-        // --- Check user permissions from live user data ---
-        const userCanManage = challengeService.canManageGames(userProfile?.role);
-        setIsFormDisabled(!userCanManage);
+    // 1) Permissions + initial data fetch
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
 
-        // --- Initial data fetching if we have a valid marathon ID ---
-        if (currentMarathonId) {
-            fetchInitialData();
-        } else {
-            setLoading(false); // No marathon ID, so stop loading
-        }
-    }, [currentMarathonId, userProfile?.role]); // Refetch if marathon or user role changes
+            const init = async () => {
+                // permissions
+                const userCanManage = challengeService.canManageGames(userProfile?.role);
+                if (isActive) setIsFormDisabled(!userCanManage);
 
-    // Add effect to update form disabled state based on inputs
-    useEffect(() => {
-        if (!userProfile?.id) {
-            setIsFormDisabled(true);
-            return;
-        }
+                // fetch initial data
+                if (currentMarathonId) {
+                    await fetchInitialData();
+                } else if (isActive) {
+                    setLoading(false);
+                }
+            };
 
-        const userCanManage = challengeService.canManageGames(userProfile.role);
-        if (!userCanManage) {
-            setIsFormDisabled(true);
-            return;
-        }
+            init();
 
-        const hasValidFamily = selectedFamily !== null;
-        const hasValidChallenge = selectedChallengeId !== null;
-        const hasValidPoints = manualPoints ? !isNaN(parseInt(manualPoints, 10)) && parseInt(manualPoints, 10) > 0 : true;
+            return () => {
+                isActive = false;
+            };
+        }, [currentMarathonId, userProfile?.role])
+    );
 
-        setIsFormDisabled(!(hasValidFamily && hasValidChallenge && hasValidPoints));
-    }, [selectedFamily, selectedChallengeId, manualPoints, userProfile]);
-
-    // Add effect to check for existing score when family and challenge are selected
-    useEffect(() => {
-        const checkExistingScore = async () => {
-            if (!selectedFamily || !selectedChallengeId || !currentMarathonId) {
-                setExistingScore(null);
+    // 2) Re-evaluate form-disabled whenever inputs or role change
+    useFocusEffect(
+        React.useCallback(() => {
+            // no async work here, just immediate checks
+            const userCanManage = challengeService.canManageGames(userProfile?.role);
+            if (!userProfile?.id || !userCanManage) {
+                setIsFormDisabled(true);
                 return;
             }
 
-            try {
-                const score = await challengeService.getExistingScore(
-                    currentMarathonId,
-                    selectedFamily,
-                    selectedChallengeId
-                );
-                setExistingScore(score);
-                if (score) {
-                    setManualPoints(score.points_awarded.toString());
-                }
-            } catch (error) {
-                console.error('Error checking existing score:', error);
-                setExistingScore(null);
-            }
-        };
+            const hasValidFamily = selectedFamily !== null;
+            const hasValidChallenge = selectedChallengeId !== null;
+            const hasValidPoints = manualPoints
+                ? !isNaN(+manualPoints) && +manualPoints > 0
+                : true;
 
-        checkExistingScore();
-    }, [selectedFamily, selectedChallengeId, currentMarathonId]);
+            setIsFormDisabled(!(hasValidFamily && hasValidChallenge && hasValidPoints));
+        }, [selectedFamily, selectedChallengeId, manualPoints, userProfile?.role])
+    );
+
+    // 3) Check for existing score on focus
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+
+            const check = async () => {
+                if (!selectedFamily || !selectedChallengeId || !currentMarathonId) {
+                    if (isActive) setExistingScore(null);
+                    return;
+                }
+
+                try {
+                    const score = await challengeService.getExistingScore(
+                        currentMarathonId,
+                        selectedFamily,
+                        selectedChallengeId
+                    );
+                    if (isActive) {
+                        setExistingScore(score);
+                        if (score) setManualPoints(score.points_awarded.toString());
+                    }
+                } catch (err) {
+                    console.error('Error checking existing score:', err);
+                    if (isActive) setExistingScore(null);
+                }
+            };
+
+            check();
+            return () => { isActive = false; };
+        }, [selectedFamily, selectedChallengeId, currentMarathonId])
+    );
 
     const fetchInitialData = async () => {
         setLoading(true);

@@ -13,10 +13,11 @@ import {
   fetchMarathonChallenges,
   updateChallengeScore
 } from '@/services/challenges';
+import { getCurrentFamily } from '@/services/familyService';
 import { fetchWeeksByMarathonId } from '@/services/marathonService';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -35,7 +36,7 @@ export default function ChallengesScreen() {
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
-  const { currentFamily } = useFamily();
+  const { currentFamily, setCurrentFamily } = useFamily();
   const { userProfile } = useAuth();
 
   const [weeks, setWeeks] = useState<{ id: number; week_number: number; start_date: string; end_date: string }[]>([]);
@@ -106,20 +107,56 @@ export default function ChallengesScreen() {
     }
   };
 
-  // Kick off weeks load when marathon & family ready
-  useEffect(() => {
-    if (!currentMarathonId || !currentFamily) return;
-    loadWeeks();
 
-  }, [currentMarathonId, currentFamily]);
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
 
-  // Fetch challenges when week selection changes
-  useEffect(() => {
-    if (selectedWeekId != null && currentFamily) {
-      fetchChallenges();
-    }
-  }, [selectedWeekId, currentFamily]);
+      const fetchFamily = async () => {
+        if (!userProfile?.id || currentFamily) return;   // bail if we already have it
 
+        try {
+          const fam = await getCurrentFamily(currentMarathonId, userProfile.id);
+          if (isActive && fam) {
+            setCurrentFamily(fam);
+          }
+        } catch (err) {
+          console.error("fetch family failed:", err);
+        }
+      };
+
+      fetchFamily();
+
+      return () => {
+        isActive = false;  // prevents state updates if screen blurs before fetch finishes
+      };
+    }, [userProfile?.id, currentFamily])
+  );
+
+  // inside your component:
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("calling back", currentMarathonId, currentFamily)
+      // 1) whenever we focus and have marathon+family, load weeks
+      if (currentMarathonId && currentFamily) {
+        loadWeeks();
+      }
+      // optional cleanup:
+      return () => {
+        // if you need to cancel inflight requests, do it here
+      };
+    }, [currentMarathonId, currentFamily])
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // 2) after weeks have loaded (selectedWeekId set), fetch challenges
+      if (selectedWeekId != null && currentFamily) {
+        fetchChallenges();
+      }
+      return () => { };
+    }, [selectedWeekId, currentFamily])
+  );
   const handleChallengePress = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
     setModalVisible(true);

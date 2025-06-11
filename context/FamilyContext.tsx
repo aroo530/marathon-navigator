@@ -17,7 +17,6 @@ const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const [currentFamily, setCurrentFamily] = useState<Family | null>(null);
-
   const value = {
     currentFamily,
     setCurrentFamily,

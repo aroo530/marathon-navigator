@@ -13,8 +13,8 @@ import {
   getCurrentTournament,
   updateMatchResult,
 } from '@/services/tournamentService';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -188,16 +188,24 @@ export default function TournamentScreen() {
     setRefreshing(false);
   };
 
-  // Initial load of weeks
-  useEffect(() => {
-    loadWeeks();
-  }, [currentMarathonId]);
 
-  // Reload tournament when week changes
-  useEffect(() => {
-    loadTournament();
-  }, [selectedWeek]);
+  // 1) Initial load of weeks whenever marathon changes or screen focuses
+  useFocusEffect(
+    React.useCallback(() => {
+      if (currentMarathonId) {
+        loadWeeks();
+      }
+    }, [currentMarathonId])
+  );
 
+  // 2) Reload tournament whenever selectedWeek changes or screen focuses
+  useFocusEffect(
+    React.useCallback(() => {
+      if (selectedWeek) {
+        loadTournament();
+      }
+    }, [selectedWeek])
+  );
   const handleUpdateMatchResult = async (
     match: TournamentMatch,
     winnerFamilyId: number

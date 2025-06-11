@@ -5,7 +5,8 @@ import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getFamilyscoreBreakdownData } from "@/services/familyService";
 import { getLeaderboardData } from "@/services/leaderboard";
 import { format } from "date-fns";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -93,10 +94,14 @@ export default function LeaderboardScreen() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    loadLeaderboardData();
-  }, [currentMarathonId]);
-
+  // useEffect(() => {
+  //   loadLeaderboardData();
+  // }, [currentMarathonId]);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadLeaderboardData();
+    }, [currentMarathonId])
+  );
   const handleFamilyPress = async (family: Family) => {
     const familyBreakdown = await getFamilyscoreBreakdownData(family.id, Number(currentMarathonId));
     setSelectedFamily({ ...family, breakdown: familyBreakdown });
