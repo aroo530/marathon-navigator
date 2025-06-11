@@ -1,7 +1,10 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Animated,
   FlatList,
   Modal,
   Platform,
@@ -39,47 +42,99 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
   family,
 }) => {
   const { t } = useTranslation();
-  
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 50,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
   if (!family) return null;
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <Animated.View 
+        style={[
+          styles.modalOverlay,
+          { opacity: fadeAnim }
+        ]}
+      >
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            { transform: [{ translateY: slideAnim }] }
+          ]}
+        >
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{family.name}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>{t('leaderboard.breakdown.close')}</Text>
+            <TouchableOpacity 
+              onPress={onClose} 
+              style={styles.closeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name='close' size={24} color={Colors.light.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Total Points */}
-          <View style={styles.totalPointsCard}>
+          <LinearGradient
+            colors={[Colors.purple[2], Colors.purple[3]]}
+            style={styles.totalPointsCard}
+          >
             <Text style={styles.totalPointsLabel}>{t('leaderboard.points')}</Text>
             <Text style={styles.totalPointsValue}>
               {family.totalpoints}
             </Text>
-          </View>
+          </LinearGradient>
 
           {/* Breakdown List */}
           <FlatList
             data={family.breakdown}
             keyExtractor={(item, idx) => `${item.challenge_title}-${idx}`}
             contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <View style={styles.breakdownItem}>
-                <Text style={styles.sourceText}>{t('leaderboard.breakdown.source')}: {item.source}</Text>
+                <View style={styles.breakdownHeader}>
+                  <Text style={styles.sourceText}>{t('leaderboard.breakdown.source')}: {item.source}</Text>
+                  <Text style={styles.pointsText}>
+                    {t('leaderboard.breakdown.points')}: {item.points_awarded}
+                  </Text>
+                </View>
                 <Text style={styles.challengeText}>
                   {t('leaderboard.breakdown.challenge')}: {item.challenge_title}
-                </Text>
-                <Text style={styles.pointsText}>
-                  {t('leaderboard.breakdown.points')}: {item.points_awarded}
                 </Text>
                 <Text style={styles.dateText}>
                   {t('leaderboard.breakdown.date')}: {new Date(item.submitted_at).toLocaleString()}
@@ -87,8 +142,8 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
               </View>
             )}
           />
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -111,12 +166,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
       },
       android: {
-        elevation: 5,
+        elevation: 8,
       },
     }),
   } as ViewStyle,
@@ -131,7 +186,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   modalTitle: {
     fontWeight: '700',
-    fontSize: Font.sizes.h1,
+    fontSize: Font.sizes.h2,
     color: Colors.light.textPrimary,
   } as TextStyle,
   closeButton: {
@@ -143,39 +198,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   } as ViewStyle,
-  closeButtonText: {
-    fontSize: Font.sizes.body,
-    color: Colors.light.textSecondary,
-  } as TextStyle,
   totalPointsCard: {
-    backgroundColor: Colors.blue[0],
     borderRadius: BorderRadius.medium,
     padding: Spacing.lg,
     alignItems: 'center',
     marginBottom: Spacing.lg,
     ...Platform.select({
       ios: {
-        shadowColor: Colors.blue[2],
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowColor: Colors.purple[2],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
       },
       android: {
-        elevation: 3,
+        elevation: 4,
       },
     }),
   } as ViewStyle,
   totalPointsLabel: {
     fontSize: Font.sizes.body,
-    color: Colors.light.textSecondary,
+    color: Colors.white,
     marginBottom: Spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    opacity: 0.9,
   } as TextStyle,
   totalPointsValue: {
     fontSize: Font.sizes.h1,
-    color: Colors.blue[2],
-    fontWeight: '700',
+    color: Colors.white,
+    fontWeight: '800',
   } as TextStyle,
   listContainer: {
     paddingBottom: Spacing.sm,
@@ -183,26 +234,31 @@ const styles = StyleSheet.create({
   breakdownItem: {
     backgroundColor: Colors.light.cardBackground,
     borderRadius: BorderRadius.medium,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.light.cardBorder,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: 3,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
       },
     }),
+  } as ViewStyle,
+  breakdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   } as ViewStyle,
   sourceText: {
     fontSize: Font.sizes.caption,
     color: Colors.light.textSecondary,
-    marginBottom: Spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   } as TextStyle,
@@ -210,13 +266,12 @@ const styles = StyleSheet.create({
     fontSize: Font.sizes.body,
     fontWeight: '600',
     color: Colors.light.textPrimary,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   } as TextStyle,
   pointsText: {
     fontSize: Font.sizes.body,
     color: Colors.green[2],
-    marginBottom: Spacing.xs,
-    fontWeight: '600',
+    fontWeight: '700',
   } as TextStyle,
   dateText: {
     fontSize: Font.sizes.caption,

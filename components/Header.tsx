@@ -1,14 +1,9 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router, useSegments } from 'expo-router';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import {
-  StyleSheet,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleSheet, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
 
@@ -28,12 +23,15 @@ export function Header({
   rightElement,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
-  const segments = useSegments();
+  const router = useRouter();
+  const navigation = useNavigation<NavigationProp<Record<string, object | undefined>>>();
+
   const handleBack = () => {
     if (onBack) {
-      onBack();
-    } else if (segments.length > 1) {
-      router.back();
+      return onBack();
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
     } else {
       router.push('/');
     }
@@ -43,11 +41,7 @@ export function Header({
     <View
       style={[
         styles.header,
-        {
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
+        { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right },
       ]}
     >
       <View style={styles.container}>
@@ -71,10 +65,7 @@ export function Header({
         <View style={styles.rightContainer}>
           {rightElement && <View style={styles.rightElement}>{rightElement}</View>}
           {title !== 'Profile' && (
-            <TouchableOpacity
-              onPress={() => router.push('/profile')}
-              style={styles.profileButton}
-            >
+            <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileButton}>
               <MaterialIcons name="person" size={24} color={Colors.white} />
             </TouchableOpacity>
           )}

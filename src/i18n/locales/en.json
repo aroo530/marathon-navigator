@@ -137,7 +137,7 @@
     }
   },
   "home": {
-    "tournamentTitle": "Tournaments",
+    "tournamentTitle": "Marathons",
     "activeMarathon": "Active Marathon",
     "endsOn": "Ends on {{date}}",
     "availableMarathons": "Available Marathons"
