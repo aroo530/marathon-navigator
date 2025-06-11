@@ -1,5 +1,6 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   Modal,
@@ -37,6 +38,8 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
   onClose,
   family,
 }) => {
+  const { t } = useTranslation();
+  
   if (!family) return null;
 
   return (
@@ -52,13 +55,13 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{family.name}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={styles.closeButtonText}>{t('leaderboard.breakdown.close')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Total Points */}
           <View style={styles.totalPointsCard}>
-            <Text style={styles.totalPointsLabel}>Total Points</Text>
+            <Text style={styles.totalPointsLabel}>{t('leaderboard.points')}</Text>
             <Text style={styles.totalPointsValue}>
               {family.totalpoints}
             </Text>
@@ -71,15 +74,15 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
             contentContainerStyle={styles.listContainer}
             renderItem={({ item }) => (
               <View style={styles.breakdownItem}>
-                <Text style={styles.sourceText}>{item.source}</Text>
+                <Text style={styles.sourceText}>{t('leaderboard.breakdown.source')}: {item.source}</Text>
                 <Text style={styles.challengeText}>
-                  {item.challenge_title}
+                  {t('leaderboard.breakdown.challenge')}: {item.challenge_title}
                 </Text>
                 <Text style={styles.pointsText}>
-                  {item.points_awarded} pts
+                  {t('leaderboard.breakdown.points')}: {item.points_awarded}
                 </Text>
                 <Text style={styles.dateText}>
-                  {new Date(item.submitted_at).toLocaleString()}
+                  {t('leaderboard.breakdown.date')}: {new Date(item.submitted_at).toLocaleString()}
                 </Text>
               </View>
             )}
@@ -127,7 +130,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.cardBorder,
   } as ViewStyle,
   modalTitle: {
-    // fontFamily: Font.heading.fontFamily,
     fontWeight: '700',
     fontSize: Font.sizes.h1,
     color: Colors.light.textPrimary,
@@ -145,7 +147,6 @@ const styles = StyleSheet.create({
     fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
   } as TextStyle,
-
   totalPointsCard: {
     backgroundColor: Colors.blue[0],
     borderRadius: BorderRadius.medium,
@@ -165,7 +166,6 @@ const styles = StyleSheet.create({
     }),
   } as ViewStyle,
   totalPointsLabel: {
-    // fontFamily: Font.body.fontFamily,
     fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
     marginBottom: Spacing.xs,
@@ -173,12 +173,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   } as TextStyle,
   totalPointsValue: {
-    // fontFamily: Font.heading.fontFamily,
     fontSize: Font.sizes.h1,
     color: Colors.blue[2],
     fontWeight: '700',
   } as TextStyle,
-
   listContainer: {
     paddingBottom: Spacing.sm,
   } as ViewStyle,
@@ -202,7 +200,6 @@ const styles = StyleSheet.create({
     }),
   } as ViewStyle,
   sourceText: {
-    // fontFamily: Font.body.fontFamily,
     fontSize: Font.sizes.caption,
     color: Colors.light.textSecondary,
     marginBottom: Spacing.xs,
@@ -210,21 +207,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   } as TextStyle,
   challengeText: {
-    // fontFamily: Font.body.fontFamily,
     fontSize: Font.sizes.body,
     fontWeight: '600',
     color: Colors.light.textPrimary,
     marginBottom: Spacing.xs,
   } as TextStyle,
   pointsText: {
-    // fontFamily: Font.body.fontFamily,
     fontSize: Font.sizes.body,
     color: Colors.green[2],
     marginBottom: Spacing.xs,
     fontWeight: '600',
   } as TextStyle,
   dateText: {
-    // fontFamily: Font.body.fontFamily,
     fontSize: Font.sizes.caption,
     color: Colors.light.textSecondary,
     fontStyle: 'italic',

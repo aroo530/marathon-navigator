@@ -1,4 +1,6 @@
 // app/(tabs)/marathon/challenges.tsx
+import { useTranslation } from 'react-i18next';
+
 import { Header } from "@/components/Header";
 import ScoreInputModal from "@/components/ScoreInputModal";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
@@ -28,6 +30,8 @@ import {
 import Toast from 'react-native-toast-message';
 
 export default function ChallengesScreen() {
+  const { t } = useTranslation();
+
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
@@ -131,12 +135,12 @@ export default function ChallengesScreen() {
         selectedChallenge.week_challenge_id,
         selectedChallenge.id
       );
-      showToast('success', 'Success', 'Score updated successfully!');
+      showToast('success', t('challenges.success'), t('challenges.scoreUpdated'))
 
       fetchChallenges();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update challenge';
-      showToast('error', 'Error', message);
+      showToast('error', t('common.error'), t('challenges.updateFailed'))
       setError(message);
 
     }
@@ -145,7 +149,7 @@ export default function ChallengesScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Header title="Challenges" />
+        <Header title={t('challenges.title')} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[2]} />
         </View>
@@ -160,7 +164,7 @@ export default function ChallengesScreen() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchChallenges}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -202,8 +206,8 @@ export default function ChallengesScreen() {
         <FlatList
           style={styles.container}
           data={[
-            { title: 'Current Week Challenges', data: weekChallenges },
-            { title: 'General Challenges', data: generalChallenges }
+            { title: t('challenges.currentWeek'), data: weekChallenges },
+            { title: t('challenges.general'), data: generalChallenges }
           ]}
           renderItem={({ item: section }) => (
             <View style={styles.section}>
@@ -227,7 +231,7 @@ export default function ChallengesScreen() {
                           color={Colors.light.textSecondary}
                         />
                         <Text style={styles.challengeTypeText}>
-                          {challenge.is_general ? "General" : "Weekly"}
+                          {challenge.is_general ? t('challenges.general') : t('challenges.weekly')}
                         </Text>
                       </View>
                       <TouchableOpacity
@@ -241,7 +245,7 @@ export default function ChallengesScreen() {
                           styles.statusButtonText,
                           !!challenge.points_awarded && styles.statusButtonTextCompleted
                         ]}>
-                          {challenge.points_awarded ? 'Completed' : 'Mark Complete'}
+                          {challenge.points_awarded ? t('challenges.completed') : t('challenges.markComplete')}
                         </Text>
                       </TouchableOpacity>
                     </View>

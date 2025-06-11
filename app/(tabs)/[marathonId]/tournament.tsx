@@ -15,6 +15,7 @@ import {
 } from '@/services/tournamentService';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -62,6 +63,8 @@ const ConfirmationModal = ({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) => {
+  const { t } = useTranslation();
+
   if (!visible || !match || newWinnerId == null) return null;
   const currentWinnerName =
     match.winner_family_id === match.family1_id
@@ -75,18 +78,13 @@ const ConfirmationModal = ({
       <View style={styles.modalOverlay}>
         <ThemedView style={styles.modalContent}>
           <ThemedText type="title" style={styles.modalTitle}>
-            Change Match Result?
+            {t('tournament.confirmation.title')}
           </ThemedText>
           <ThemedText type="default" style={styles.modalText}>
-            Are you sure you want to change the winner from{' '}
-            <ThemedText type="defaultSemiBold" style={styles.teamHighlight}>
-              {currentWinnerName}
-            </ThemedText>{' '}
-            to{' '}
-            <ThemedText type="defaultSemiBold" style={styles.teamHighlight}>
-              {newWinnerName}
-            </ThemedText>
-            ?
+            {t('tournament.confirmation.message', {
+              currentWinner: currentWinnerName,
+              newWinner: newWinnerName
+            })}
           </ThemedText>
           <View style={styles.modalButtons}>
             <TouchableOpacity
@@ -94,7 +92,7 @@ const ConfirmationModal = ({
               onPress={onCancel}
             >
               <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>
-                Cancel
+                {t('tournament.confirmation.cancel')}
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
@@ -102,7 +100,7 @@ const ConfirmationModal = ({
               onPress={onConfirm}
             >
               <ThemedText type="defaultSemiBold" style={styles.confirmButtonText}>
-                Confirm
+                {t('tournament.confirmation.confirm')}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -113,6 +111,7 @@ const ConfirmationModal = ({
 };
 
 export default function TournamentScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { marathonId: paramId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
@@ -152,7 +151,7 @@ export default function TournamentScreen() {
       setSelectedWeek(current?.week_number ?? allWeeks[0]?.week_number ?? null);
     } catch (err) {
       console.error('Error loading weeks:', err);
-      Alert.alert('Error', 'Could not load weeks.');
+      Alert.alert(t('common.error'), t('tournament.errors.loadWeeks'));
     }
   };
 
@@ -165,7 +164,7 @@ export default function TournamentScreen() {
       setTournament(data);
     } catch (err) {
       console.error('Error loading tournament:', err);
-      Alert.alert('Error', 'Failed to load tournament data');
+      Alert.alert(t('common.error'), t('tournament.errors.loadTournament'));
     } finally {
       setLoading(false);
     }
@@ -192,7 +191,7 @@ export default function TournamentScreen() {
     winnerFamilyId: number
   ) => {
     if (!userProfile || !canUpdateMatchResults(userProfile.role)) {
-      Alert.alert('Error', 'You do not have permission to update match results');
+      Alert.alert(t('common.error'), t('tournament.errors.noPermission'));
       return;
     }
 
@@ -223,13 +222,13 @@ export default function TournamentScreen() {
       );
       if (result.success) {
         await loadTournament();
-        showToast('success', 'Success', result.message);
+        showToast('success', t('common.success'), t('tournament.success.matchUpdated'));
       } else {
-        Alert.alert('Error', 'Failed to update match result');
+        Alert.alert(t('common.error'), t('tournament.errors.updateMatch'));
       }
     } catch (err) {
       console.error('Error updating match result:', err);
-      Alert.alert('Error', 'Failed to update match result');
+      Alert.alert(t('common.error'), t('tournament.errors.updateMatch'));
     }
   };
 
@@ -259,7 +258,7 @@ export default function TournamentScreen() {
             </Text>
           </TouchableOpacity>
           <View style={styles.vsContainer}>
-            <Text style={styles.vsText}>VS</Text>
+            <Text style={styles.vsText}>{t('tournament.match.vs')}</Text>
           </View>
           <TouchableOpacity
             style={[styles.teamButton, family2Won && styles.winnerTeam]}
@@ -274,13 +273,13 @@ export default function TournamentScreen() {
         {match.status === 'completed' && (
           <View style={styles.resultBadge}>
             <Text style={styles.resultText}>
-              Winner:{' '}
+              {t('tournament.match.winner')}:{' '}
               {family1Won ? match.family1_name : match.family2_name}
             </Text>
           </View>
         )}
         {isAdmin && match.status !== 'completed' && (
-          <Text style={styles.adminHint}>Tap a team to set as winner</Text>
+          <Text style={styles.adminHint}>{t('tournament.match.tapToSetWinner')}</Text>
         )}
       </View>
     );
@@ -290,7 +289,7 @@ export default function TournamentScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Header title="Tournament" />
+        <Header title={t('tournament.title')} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[1]} />
         </View>
@@ -302,7 +301,7 @@ export default function TournamentScreen() {
   if (!tournament) {
     return (
       <View style={styles.container}>
-        <Header title="Tournament" />
+        <Header title={t('tournament.title')} />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
@@ -318,7 +317,7 @@ export default function TournamentScreen() {
           }
         >
           <Text style={styles.noTournamentText}>
-            No active tournament found
+            {t('tournament.noActiveTournament')}
           </Text>
         </ScrollView>
       </View>
@@ -364,7 +363,7 @@ export default function TournamentScreen() {
                   styles.selectedWeekText,
                 ]}
               >
-                Week {w.week_number}
+                {t('tournament.week', { number: w.week_number })}
               </Text>
             </TouchableOpacity>
           ))}
@@ -373,14 +372,14 @@ export default function TournamentScreen() {
         {/* Matches */}
         <View style={styles.matchesContainer}>
           <Text style={styles.sectionTitle}>
-            Week {selectedWeek} Matches
+            {t('tournament.week', { number: selectedWeek })} {t('tournament.matches')}
           </Text>
           {tournament.matches.length > 0 ? (
             tournament.matches.map(renderMatch)
           ) : (
             <View style={styles.noMatchesContainer}>
               <Text style={styles.noMatchesText}>
-                No matches scheduled for this week
+                {t('tournament.noMatches')}
               </Text>
             </View>
           )}
@@ -388,15 +387,15 @@ export default function TournamentScreen() {
 
         {/* Stats */}
         <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>Tournament Stats</Text>
+          <Text style={styles.statsTitle}>{t('tournament.stats.title')}</Text>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Total Matches:</Text>
+            <Text style={styles.statLabel}>{t('tournament.stats.totalMatches')}:</Text>
             <Text style={styles.statValue}>
               {tournament.matches.length}
             </Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Completed Matches:</Text>
+            <Text style={styles.statLabel}>{t('tournament.stats.completedMatches')}:</Text>
             <Text style={styles.statValue}>
               {
                 tournament.matches.filter((m) => m.status === 'completed')
@@ -405,7 +404,7 @@ export default function TournamentScreen() {
             </Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statLabel}>Status:</Text>
+            <Text style={styles.statLabel}>{t('tournament.stats.status')}:</Text>
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>{tournament.status}</Text>
             </View>

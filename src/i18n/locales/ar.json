@@ -1,4 +1,15 @@
 {
+  "challenges": {
+    "title": "التحديات",
+    "currentWeek": "تحديات الأسبوع",
+    "general": "تحديات عامة",
+    "weekly": "أسبوعي",
+    "markComplete": "علامة كمكتملة",
+    "completed": "مكتملة",
+    "success": "تمام",
+    "scoreUpdated": "تم تحديث السكور بنجاح!",
+    "updateFailed": "فشل في تحديث التحدي"
+  },
   "common": {
     "welcome": "أهلاً",
     "settings": "الإعدادات",
@@ -7,7 +18,9 @@
     "dark": "غامق",
     "light": "فاتح",
     "restartTitle": "محتاجين نعيد التشغيل",
-    "restartMessage": "التطبيق محتاج يتقفل ويتفتح تاني عشان اللغة تشتغل صح."
+    "restartMessage": "التطبيق محتاج يتقفل ويتفتح تاني عشان اللغة تشتغل صح.",
+    "error": "غلط",
+    "retry": "حاول تاني"
   },
   "tabs": {
     "overview": "نظرة سريعة",
@@ -27,5 +40,99 @@
     "fillAllFields": "محتاج تملى كل الخانات",
     "noAccount": "معندكش حساب؟",
     "signUp": "سجّل حساب جديد"
+  },
+  "games": {
+    "title": "إدارة الألعاب",
+    "gameManager": "مدير الألعاب",
+    "assignScores": "حط نقاط للعائلات في التحديات",
+    "addGameScore": "ضيف نقاط للعبة",
+    "selectFamily": "اختار العيلة",
+    "chooseFamily": "اختار عيلة...",
+    "selectGame": "اختار التحدي",
+    "noActiveGames": "مفيش ألعاب نشطة في الماراثون ده.",
+    "pointsToAward": "النقاط اللي هتحطها",
+    "updatePoints": "تحديث النقاط",
+    "enterPoints": "اكتب النقاط (أكتر حاجة {max})",
+    "max": "أكتر حاجة",
+    "previousScore": "النقاط اللي فاتت: {points} نقطة",
+    "addScore": "ضيف نقاط للعيلة",
+    "updateScore": "حدث النقاط",
+    "addingScore": "بضيف النقاط...",
+    "updating": "بحدث...",
+    "recentEntries": "آخر النقاط",
+    "noRecentEntries": "مفيش نقاط جديدة",
+    "noMarathon": "مفيش ماراثون مختار.",
+    "selectMarathon": "اختار ماراثون عشان تدير الألعاب.",
+    "loadingGames": "بجيب بيانات الألعاب...",
+    "invalidPoints": "النقاط مش صح",
+    "enterValidPoints": "اكتب رقم صحيح للنقاط.",
+    "pointsExceedMax": "النقاط مش ممكن تزيد عن {max} في التحدي ده.",
+    "scoreUpdated": "تم تحديث النقاط لـ {points} نقطة!",
+    "pointsAdded": "تم إضافة {points} نقطة بنجاح!",
+    "limitReached": "وصلت للحد الأقصى",
+    "maxScoresReached": "مش ممكن تضيف أكتر من 3 نقاط للعيلة دي في الماراثون الحالي."
+  },
+  "leaderboard": {
+    "title": "الترتيب",
+    "rank": "الترتيب",
+    "family": "العيلة",
+    "points": "النقاط",
+    "first": "الأول",
+    "second": "التاني",
+    "third": "التالت",
+    "loading": "بجيب الترتيب...",
+    "noData": "مفيش بيانات للترتيب",
+    "breakdown": {
+      "title": "تفاصيل النقاط",
+      "source": "المصدر",
+      "challenge": "التحدي",
+      "points": "النقاط",
+      "date": "التاريخ",
+      "close": "قفل"
+    }
+  },
+  "profile": {
+    "title": "البروفايل",
+    "accountSettings": "إعدادات الحساب",
+    "editProfile": "تعديل البروفايل",
+    "changePassword": "تغيير الباسورد",
+    "language": "اللغة",
+    "signOut": "تسجيل خروج",
+    "comingSoon": "قريباً",
+    "featureNotAvailable": "الميزة دي مش متاحة دلوقتي",
+    "signOutError": "فشل تسجيل الخروج"
+  },
+  "tournament": {
+    "title": "المسابقة",
+    "noActiveTournament": "مفيش مسابقة نشطة دلوقتي",
+    "week": "أسبوع {{number}}",
+    "matches": "المباريات",
+    "noMatches": "مفيش مباريات في الأسبوع ده",
+    "stats": {
+      "title": "إحصائيات المسابقة",
+      "totalMatches": "إجمالي المباريات",
+      "completedMatches": "المباريات المكتملة",
+      "status": "الحالة"
+    },
+    "match": {
+      "vs": "ضد",
+      "winner": "الفايز",
+      "tapToSetWinner": "دوس على الفريق عشان تحطو فايز"
+    },
+    "confirmation": {
+      "title": "تغيير نتيجة المباراة؟",
+      "message": "انت متأكد انك عايز تغير الفايز من {currentWinner} لـ {newWinner}؟",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد"
+    },
+    "errors": {
+      "loadWeeks": "مش قدرين نجيب الأسابيع",
+      "loadTournament": "فشل في جلب بيانات المسابقة",
+      "updateMatch": "فشل في تحديث نتيجة المباراة",
+      "noPermission": "معندكش صلاحية تحديث نتائج المباريات"
+    },
+    "success": {
+      "matchUpdated": "تم تحديث نتيجة المباراة بنجاح"
+    }
   }
 }

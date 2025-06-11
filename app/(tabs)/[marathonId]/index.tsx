@@ -6,6 +6,7 @@ import { getFamilyscoreBreakdownData } from "@/services/familyService";
 import { getLeaderboardData } from "@/services/leaderboard";
 import { format } from "date-fns";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -50,29 +51,33 @@ type PodiumItemProps = {
   height: number;
 };
 
-const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height }) => (
-  <View style={[styles.podiumItem, { height }]}>
-    <View style={[styles.podiumCircle, { backgroundColor: color }]}>
-      {family?.avatarurl ? (
-        <Image source={{ uri: family.avatarurl }} style={styles.podiumAvatar} />
-      ) : (
-        <Text style={styles.podiumEmoji}>👨‍👩‍👧‍👦</Text>
-      )}
+const PodiumItem: React.FC<PodiumItemProps> = ({ family, position, color, height }) => {
+  const { t } = useTranslation();
+  return (
+    <View style={[styles.podiumItem, { height }]}>
+      <View style={[styles.podiumCircle, { backgroundColor: color }]}>
+        {family?.avatarurl ? (
+          <Image source={{ uri: family.avatarurl }} style={styles.podiumAvatar} />
+        ) : (
+          <Text style={styles.podiumEmoji}>👨‍👩‍👧‍👦</Text>
+        )}
+      </View>
+      <View
+        style={[
+          styles.podiumBase,
+          { backgroundColor: color, height: height - 60 },
+        ]}
+      >
+        <Text style={styles.podiumPosition}>{position}</Text>
+        <Text style={styles.podiumFamily}>{family?.name}</Text>
+        <Text style={styles.podiumPoints}>{family?.totalpoints}</Text>
+      </View>
     </View>
-    <View
-      style={[
-        styles.podiumBase,
-        { backgroundColor: color, height: height - 60 },
-      ]}
-    >
-      <Text style={styles.podiumPosition}>{position}</Text>
-      <Text style={styles.podiumFamily}>{family?.name}</Text>
-      <Text style={styles.podiumPoints}>{family?.totalpoints}</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 export default function LeaderboardScreen() {
+  const { t } = useTranslation();
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = selectedMarathon?.id;
   const [leaderboardData, setLeaderboardData] = useState<Family[]>([]);
@@ -149,7 +154,7 @@ export default function LeaderboardScreen() {
           >
             <PodiumItem
               family={topThree[1]}
-              position="2nd"
+              position={t('leaderboard.second')}
               color={Colors.light.textSecondary}
               height={140}
             />
@@ -160,7 +165,7 @@ export default function LeaderboardScreen() {
           >
             <PodiumItem
               family={topThree[0]}
-              position="1st"
+              position={t('leaderboard.first')}
               color={Colors.yellow[1]}
               height={160}
             />
@@ -171,7 +176,7 @@ export default function LeaderboardScreen() {
           >
             <PodiumItem
               family={topThree[2]}
-              position="3rd"
+              position={t('leaderboard.third')}
               color={Colors.orange[2]}
               height={120}
             />
@@ -180,13 +185,13 @@ export default function LeaderboardScreen() {
 
         <View style={styles.tableHeader}>
           <View style={styles.rankColumn}>
-            <Text style={styles.tableHeaderText}>Rank</Text>
+            <Text style={styles.tableHeaderText}>{t('leaderboard.rank')}</Text>
           </View>
           <View style={styles.familyColumn}>
-            <Text style={styles.tableHeaderText}>Family</Text>
+            <Text style={styles.tableHeaderText}>{t('leaderboard.family')}</Text>
           </View>
           <View style={styles.pointsColumn}>
-            <Text style={styles.tableHeaderText}>Points</Text>
+            <Text style={styles.tableHeaderText}>{t('leaderboard.points')}</Text>
           </View>
         </View>
       </>
@@ -197,11 +202,12 @@ export default function LeaderboardScreen() {
     return (
       <View style={styles.container}>
         <Header
-          title={selectedMarathon?.title || 'Leaderboard'}
+          title={selectedMarathon?.title || t('leaderboard.title')}
           subtitle={selectedMarathon?.description}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[1]} />
+          <ThemedText style={styles.loadingText}>{t('leaderboard.loading')}</ThemedText>
         </View>
       </View>
     );
@@ -210,7 +216,7 @@ export default function LeaderboardScreen() {
   return (
     <View style={styles.container}>
       <Header
-        title={selectedMarathon?.title || 'Leaderboard'}
+        title={selectedMarathon?.title || t('leaderboard.title')}
         subtitle={selectedMarathon?.description}
       />
 
@@ -229,6 +235,11 @@ export default function LeaderboardScreen() {
             colors={[Colors.purple[1]]}
             progressBackgroundColor={Colors.white}
           />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>{t('leaderboard.noData')}</ThemedText>
+          </View>
         }
       />
 
@@ -447,4 +458,20 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
   } as ImageStyle,
+  loadingText: {
+    marginTop: Spacing.md,
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+  } as TextStyle,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  } as ViewStyle,
+  emptyText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+  } as TextStyle,
 });

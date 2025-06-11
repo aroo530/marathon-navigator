@@ -3,11 +3,13 @@ import { Colors } from "@/constants/Theme";
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import LanguageSwitcher from "../../src/components/LanguageSwitcher";
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { session, userProfile, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -15,7 +17,7 @@ export default function ProfileScreen() {
       await signOut();
       router.replace('/(auth)');
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to sign out');
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('profile.signOutError'));
     }
   };
 
@@ -48,23 +50,23 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
+        <Text style={styles.sectionTitle}>{t('profile.accountSettings')}</Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => Alert.alert('Coming Soon', 'This feature is not yet available')}
+          onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
         >
-          <Text style={styles.buttonText}>Edit Profile</Text>
+          <Text style={styles.buttonText}>{t('profile.editProfile')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => Alert.alert('Coming Soon', 'This feature is not yet available')}
+          onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
         >
-          <Text style={styles.buttonText}>Change Password</Text>
+          <Text style={styles.buttonText}>{t('profile.changePassword')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Language</Text>
+        <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
         <View style={styles.languageContainer}>
           <LanguageSwitcher />
         </View>
@@ -74,7 +76,7 @@ export default function ProfileScreen() {
         style={[styles.button, styles.signOutButton]}
         onPress={handleSignOut}
       >
-        <Text style={[styles.buttonText, styles.signOutText]}>Sign Out</Text>
+        <Text style={[styles.buttonText, styles.signOutText]}>{t('profile.signOut')}</Text>
       </TouchableOpacity>
     </View>
   );

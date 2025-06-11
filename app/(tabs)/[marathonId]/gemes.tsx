@@ -9,6 +9,7 @@ import { Family, GameChallenge, GameScoreEntry, RecentGameEntry } from '@/servic
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     Alert,
@@ -25,6 +26,7 @@ import { Button, Menu } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
 export default function Games() {
+    const { t } = useTranslation();
     // --- Live data from hooks ---
     const { marathonId } = useLocalSearchParams();
     const { selectedMarathon } = useMarathon();
@@ -203,15 +205,15 @@ export default function Games() {
             //         : `${pointsToAward} points added successfully!`
             // );
             showToast('success', existingScore
-                ? `Score updated to ${pointsToAward} points!`
-                : `${pointsToAward} points added successfully!`, '');
+                ? t('games.scoreUpdated', { points: pointsToAward })
+                : t('games.scoreAdded', { points: pointsToAward }), '');
 
         } catch (error: any) {
             if (error.code === 'P0001' && error.message?.includes('Cannot have more than 3 game scores')) {
                 showToast(
                     'error',
                     'Limit Reached',
-                    'You cannot add more than 3 game scores for this family in the current marathon.'
+                    t('games.limitReached', { limit: 3 })
                 );
             } else {
                 showToast('error', 'Error', 'Failed to save score. Please try again.');
@@ -238,7 +240,7 @@ export default function Games() {
         return (
             <ThemedView style={styles.centered}>
                 <ActivityIndicator size="large" color={Colors.purple[2]} />
-                <ThemedText>Loading Game Data...</ThemedText>
+                <ThemedText>{t('games.loadingGames')}</ThemedText>
             </ThemedView>
         );
     }
@@ -246,15 +248,15 @@ export default function Games() {
     if (!currentMarathonId) {
         return (
             <ThemedView style={styles.centered}>
-                <ThemedText style={styles.emptyText}>No marathon selected.</ThemedText>
-                <ThemedText style={styles.emptyText}>Please select a marathon to manage games.</ThemedText>
+                <ThemedText style={styles.emptyText}>{t('games.noMarathon')}</ThemedText>
+                <ThemedText style={styles.emptyText}>{t('games.selectMarathon')}</ThemedText>
             </ThemedView>
         )
     }
 
     return (
         <ThemedView style={styles.container}>
-            <Header title="Manage Games" />
+            <Header title={t('games.title')} />
             <ScrollView
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
@@ -262,24 +264,23 @@ export default function Games() {
                 {/* Header Card */}
                 <View style={styles.headerCard}>
                     <View style={styles.headerTextContainer}>
-                        <ThemedText style={styles.headerTitle}>Game Manager</ThemedText>
-                        <ThemedText style={styles.headerSubtitle}>Assign scores to families for game challenges</ThemedText>
+                        <ThemedText style={styles.headerTitle}>{t('games.gameManager')}</ThemedText>
+                        <ThemedText style={styles.headerSubtitle}>{t('games.assignScores')}</ThemedText>
                     </View>
                 </View>
 
                 {/* Add Game Score Card */}
                 <View style={styles.card}>
-                    <ThemedText style={styles.title}>Add Game Score</ThemedText>
+                    <ThemedText style={styles.title}>{t('games.addGameScore')}</ThemedText>
 
-                    <ThemedText style={styles.label}>Select Family</ThemedText>
+                    <ThemedText style={styles.label}>{t('games.selectFamily')}</ThemedText>
                     <View style={styles.pickerWrapper}>
-
                         <Menu
                             visible={visible}
                             onDismiss={() => setVisible(false)}
                             anchor={
                                 <Button mode="outlined" onPress={() => setVisible(true)}>
-                                    {families.find((f) => f.id === selectedFamily)?.name || 'Choose a family...'}
+                                    {families.find((f) => f.id === selectedFamily)?.name || t('games.chooseFamily')}
                                 </Button>
                             }
                         >
@@ -296,9 +297,9 @@ export default function Games() {
                         </Menu>
                     </View>
 
-                    <ThemedText style={styles.label}>Select Game Challenge</ThemedText>
+                    <ThemedText style={styles.label}>{t('games.selectGame')}</ThemedText>
                     {gameChallenges.length === 0 && !loading ? (
-                        <ThemedText style={styles.emptyText}>No active games found for this marathon.</ThemedText>
+                        <ThemedText style={styles.emptyText}>{t('games.noActiveGames')}</ThemedText>
                     ) : (
                         gameChallenges.map((challenge) => (
                             <TouchableOpacity
@@ -322,12 +323,12 @@ export default function Games() {
                     {selectedChallenge && (
                         <View style={styles.pointsSection}>
                             <ThemedText style={styles.pointsDisplayLabel}>
-                                {existingScore ? 'Update Points:' : 'Points to Award:'}
+                                {existingScore ? t('games.updatePoints') : t('games.pointsToAward')}
                             </ThemedText>
                             <View style={styles.pointsInputContainer}>
                                 <TextInput
                                     style={styles.pointsInput}
-                                    placeholder={`Enter points (max ${selectedChallenge.points})`}
+                                    placeholder={t('games.enterPoints', { max: selectedChallenge.points })}
                                     keyboardType="numeric"
                                     value={manualPoints}
                                     onChangeText={(text) => {
@@ -338,12 +339,12 @@ export default function Games() {
                                     editable={!loading}
                                 />
                                 <ThemedText style={styles.pointsMaxLabel}>
-                                    Max: {selectedChallenge.points}
+                                    {t('games.max')}: {selectedChallenge.points}
                                 </ThemedText>
                             </View>
                             {existingScore && (
                                 <ThemedText style={styles.existingScoreNote}>
-                                    Previous score: {existingScore.points_awarded} points
+                                    {t('games.previousScore', { points: existingScore.points_awarded })}
                                 </ThemedText>
                             )}
                         </View>
@@ -369,8 +370,8 @@ export default function Games() {
                         )}
                         <ThemedText style={styles.buttonText}>
                             {loading
-                                ? (existingScore ? 'Updating...' : 'Adding Score...')
-                                : (existingScore ? 'Update Score' : 'Add Score to Family')
+                                ? (existingScore ? t('games.updating') : t('games.addingScore'))
+                                : (existingScore ? t('games.updateScore') : t('games.addScore'))
                             }
                         </ThemedText>
                     </TouchableOpacity>
@@ -379,11 +380,11 @@ export default function Games() {
                 {/* Recent Entries Card */}
                 <View style={styles.recentCard}>
                     <View style={styles.recentHeader}>
-                        <ThemedText style={styles.recentTitle}>Recent Entries</ThemedText>
+                        <ThemedText style={styles.recentTitle}>{t('games.recentEntries')}</ThemedText>
                     </View>
                     <View style={styles.recentContent}>
                         {recent.length === 0 ? (
-                            <ThemedText style={styles.emptyText}>No recent entries</ThemedText>
+                            <ThemedText style={styles.emptyText}>{t('games.noRecentEntries')}</ThemedText>
                         ) : (
                             <FlatList
                                 data={recent}
@@ -391,7 +392,6 @@ export default function Games() {
                                 renderItem={({ item }) => (
                                     <View style={styles.entry}>
                                         <View style={styles.entryLeft}>
-
                                             <View>
                                                 <ThemedText style={styles.entryFamily}>{item.family}</ThemedText>
                                                 <ThemedText style={styles.entryGame}>{item.game}</ThemedText>

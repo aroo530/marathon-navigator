@@ -1,4 +1,15 @@
 {
+  "challenges": {
+    "title": "Challenges",
+    "currentWeek": "Current Week Challenges",
+    "general": "General Challenges",
+    "weekly": "Weekly",
+    "markComplete": "Mark Complete",
+    "completed": "Completed",
+    "success": "Success",
+    "scoreUpdated": "Score updated successfully!",
+    "updateFailed": "Failed to update challenge"
+  },
   "common": {
     "welcome": "Welcome",
     "settings": "Settings",
@@ -7,7 +18,9 @@
     "dark": "Dark",
     "light": "Light",
     "restartTitle": "Restart Required",
-    "restartMessage": "The app needs to restart to apply the new layout direction."
+    "restartMessage": "The app needs to restart to apply the new layout direction.",
+    "error": "Error",
+    "retry": "Retry"
   },
   "tabs": {
     "overview": "Overview",
@@ -27,5 +40,99 @@
     "fillAllFields": "Please fill in all fields",
     "noAccount": "Don't have an account?",
     "signUp": "Sign Up"
+  },
+  "games": {
+    "title": "Manage Games",
+    "gameManager": "Game Manager",
+    "assignScores": "Assign scores to families for game challenges",
+    "addGameScore": "Add Game Score",
+    "selectFamily": "Select Family",
+    "chooseFamily": "Choose a family...",
+    "selectGame": "Select Game Challenge",
+    "noActiveGames": "No active games found for this marathon.",
+    "pointsToAward": "Points to Award",
+    "updatePoints": "Update Points",
+    "enterPoints": "Enter points (max {max})",
+    "max": "Max",
+    "previousScore": "Previous score: {points} points",
+    "addScore": "Add Score to Family",
+    "updateScore": "Update Score",
+    "addingScore": "Adding Score...",
+    "updating": "Updating...",
+    "recentEntries": "Recent Entries",
+    "noRecentEntries": "No recent entries",
+    "noMarathon": "No marathon selected.",
+    "selectMarathon": "Please select a marathon to manage games.",
+    "loadingGames": "Loading Game Data...",
+    "invalidPoints": "Invalid Points",
+    "enterValidPoints": "Please enter a valid number of points.",
+    "pointsExceedMax": "Points cannot exceed the maximum of {max} for this challenge.",
+    "scoreUpdated": "Score updated to {points} points!",
+    "pointsAdded": "{points} points added successfully!",
+    "limitReached": "Limit Reached",
+    "maxScoresReached": "You cannot add more than 3 game scores for this family in the current marathon."
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "rank": "Rank",
+    "family": "Family",
+    "points": "Points",
+    "first": "1st",
+    "second": "2nd",
+    "third": "3rd",
+    "loading": "Loading leaderboard...",
+    "noData": "No leaderboard data available",
+    "breakdown": {
+      "title": "Score Breakdown",
+      "source": "Source",
+      "challenge": "Challenge",
+      "points": "Points",
+      "date": "Date",
+      "close": "Close"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "accountSettings": "Account Settings",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "comingSoon": "Coming Soon",
+    "featureNotAvailable": "This feature is not yet available",
+    "signOutError": "Failed to sign out"
+  },
+  "tournament": {
+    "title": "Tournament",
+    "noActiveTournament": "No active tournament found",
+    "week": "Week {{number}}",
+    "matches": "Matches",
+    "noMatches": "No matches scheduled for this week",
+    "stats": {
+      "title": "Tournament Stats",
+      "totalMatches": "Total Matches",
+      "completedMatches": "Completed Matches",
+      "status": "Status"
+    },
+    "match": {
+      "vs": "VS",
+      "winner": "Winner",
+      "tapToSetWinner": "Tap a team to set as winner"
+    },
+    "confirmation": {
+      "title": "Change Match Result?",
+      "message": "Are you sure you want to change the winner from {currentWinner} to {newWinner}?",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "errors": {
+      "loadWeeks": "Could not load weeks",
+      "loadTournament": "Failed to load tournament data",
+      "updateMatch": "Failed to update match result",
+      "noPermission": "You do not have permission to update match results"
+    },
+    "success": {
+      "matchUpdated": "Match result updated successfully"
+    }
   }
 }
