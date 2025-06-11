@@ -1,0 +1,143 @@
+// import { ThemedText } from '@/components/ThemedText';
+// import { ThemedView } from '@/components/ThemedView';
+// import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+// import { Link, router } from 'expo-router';
+// import { useState } from 'react';
+// import { useTranslation } from 'react-i18next';
+// import {
+//     Alert,
+//     KeyboardAvoidingView,
+//     Platform,
+//     StyleSheet,
+//     TextInput,
+//     TouchableOpacity,
+//     View,
+// } from 'react-native';
+// import { useAuth } from '../../context/AuthContext';
+
+// export default function SignInScreen() {
+//   const { t } = useTranslation();
+//   const [email, setEmail] = useState('');
+//   const [password, setPassword] = useState('');
+//   const [isLoading, setIsLoading] = useState(false);
+//   const { signIn } = useAuth();
+
+//   const handleSignIn = async () => {
+//     if (!email || !password) {
+//       Alert.alert(t('auth.error'), t('auth.fillAllFields'));
+//       return;
+//     }
+
+//     try {
+//       setIsLoading(true);
+//       await signIn(email, password);
+//       router.replace('/(tabs)');
+//     } catch (error) {
+//       Alert.alert(t('auth.error'), error instanceof Error ? error.message : t('common.error'));
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <KeyboardAvoidingView
+//       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+//       style={styles.container}
+//     >
+//       <ThemedView style={styles.content}>
+//         <ThemedText type="title" style={styles.title}>{t('auth.welcomeBack')}</ThemedText>
+//         <ThemedText type="subtitle" style={styles.subtitle}>{t('auth.signInToContinue')}</ThemedText>
+
+//         <View style={styles.form}>
+//           <TextInput
+//             style={styles.input}
+//             placeholder={t('auth.email')}
+//             value={email}
+//             onChangeText={setEmail}
+//             autoCapitalize="none"
+//             keyboardType="email-address"
+//             placeholderTextColor={Colors.light.textSecondary}
+//           />
+//           <TextInput
+//             style={styles.input}
+//             placeholder={t('auth.password')}
+//             value={password}
+//             onChangeText={setPassword}
+//             secureTextEntry
+//             placeholderTextColor={Colors.light.textSecondary}
+//           />
+
+//           <TouchableOpacity
+//             style={[styles.button, isLoading && styles.buttonDisabled]}
+//             onPress={handleSignIn}
+//             disabled={isLoading}
+//           >
+//             <ThemedText type="defaultSemiBold" style={styles.buttonText}>
+//               {isLoading ? t('auth.signingIn') : t('auth.signIn')}
+//             </ThemedText>
+//           </TouchableOpacity>
+
+//           <View style={styles.footer}>
+//             <ThemedText type="default">{t('auth.noAccount')} </ThemedText>
+//             <Link href="/sign-up" asChild>
+//               <TouchableOpacity>
+//                 <ThemedText type="defaultSemiBold" style={styles.linkText}>{t('auth.signUp')}</ThemedText>
+//               </TouchableOpacity>
+//             </Link>
+//           </View>
+//         </View>
+//       </ThemedView>
+//     </KeyboardAvoidingView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   content: {
+//     flex: 1,
+//     padding: Spacing.lg,
+//     justifyContent: 'center',
+//   },
+//   title: {
+//     marginBottom: Spacing.xs,
+//   },
+//   subtitle: {
+//     marginBottom: Spacing.xl,
+//   },
+//   form: {
+//     gap: Spacing.md,
+//   },
+//   input: {
+//     backgroundColor: Colors.light.cardBackground,
+//     padding: Spacing.md,
+//     borderRadius: BorderRadius.medium,
+//     fontSize: Font.sizes.body,
+//     borderWidth: 1,
+//     borderColor: Colors.light.cardBorder,
+//     color: Colors.light.textPrimary,
+//   },
+//   button: {
+//     backgroundColor: Colors.purple[2],
+//     padding: Spacing.md,
+//     borderRadius: BorderRadius.medium,
+//     alignItems: 'center',
+//     marginTop: Spacing.xs,
+//   },
+//   buttonDisabled: {
+//     opacity: 0.7,
+//   },
+//   buttonText: {
+//     color: Colors.white,
+//   },
+//   footer: {
+//     flexDirection: 'row',
+//     justifyContent: 'center',
+//     marginTop: Spacing.md,
+//   },
+//   linkText: {
+//     color: Colors.purple[2],
+//     marginLeft: Spacing.xs,
+//   },
+// }); 
