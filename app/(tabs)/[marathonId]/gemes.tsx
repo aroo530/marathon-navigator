@@ -441,13 +441,11 @@ const styles = StyleSheet.create({
     } as ViewStyle,
     headerTextContainer: { flex: 1 } as ViewStyle,
     headerTitle: {
-        ...Font.heading,
         fontSize: Font.sizes.h2,
         color: Colors.white,
         marginBottom: 2,
     } as TextStyle,
     headerSubtitle: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         color: Colors.white,
         opacity: 0.9,
@@ -464,13 +462,11 @@ const styles = StyleSheet.create({
         position: 'relative',
     } as ViewStyle,
     title: {
-        ...Font.heading,
         fontSize: Font.sizes.h2,
         marginBottom: Spacing.md,
         color: Colors.purple[2],
     } as TextStyle,
     label: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         marginTop: Spacing.sm,
         marginBottom: Spacing.xs,
@@ -515,12 +511,10 @@ const styles = StyleSheet.create({
     } as ViewStyle,
     gameIcon: { marginRight: Spacing.sm },
     gameLabel: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         flex: 1,
     } as TextStyle,
     gamePoints: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         fontWeight: 'bold',
         color: Colors.purple[2],
@@ -532,7 +526,6 @@ const styles = StyleSheet.create({
         marginVertical: Spacing.md,
     } as ViewStyle,
     pointsDisplayLabel: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         color: Colors.light.textSecondary,
         marginBottom: Spacing.xs,
@@ -554,7 +547,6 @@ const styles = StyleSheet.create({
         fontSize: Font.sizes.body,
     } as TextStyle,
     pointsMaxLabel: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         color: Colors.light.textSecondary,
     } as TextStyle,
@@ -577,7 +569,6 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.blue[2],
     } as ViewStyle,
     buttonText: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         color: Colors.white,
         marginLeft: Spacing.sm,
@@ -597,7 +588,6 @@ const styles = StyleSheet.create({
         padding: Spacing.md,
     } as ViewStyle,
     recentTitle: {
-        ...Font.heading,
         fontSize: Font.sizes.h2,
         color: Colors.white,
     } as TextStyle,
@@ -617,32 +607,27 @@ const styles = StyleSheet.create({
     } as ViewStyle,
     entryIcon: { marginRight: Spacing.sm },
     entryFamily: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         fontWeight: '600',
         color: Colors.light.textPrimary,
     } as TextStyle,
     entryGame: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         color: Colors.light.textSecondary,
         marginTop: 2,
     } as TextStyle,
     entryRight: { alignItems: 'flex-end' } as ViewStyle,
     entryPoints: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         fontWeight: 'bold',
         color: Colors.green[2],
     } as TextStyle,
     entryAgo: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         color: Colors.light.textSecondary,
         marginTop: 2,
     } as TextStyle,
     emptyText: {
-        ...Font.body,
         fontSize: Font.sizes.body,
         color: Colors.light.textSecondary,
         textAlign: 'center',
@@ -662,7 +647,6 @@ const styles = StyleSheet.create({
         fontWeight: '600'
     } as TextStyle,
     existingScoreNote: {
-        ...Font.body,
         fontSize: Font.sizes.caption,
         color: Colors.blue[2],
         marginTop: Spacing.xs,

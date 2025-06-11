@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "settings": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "restartTitle": "Restart Required",
+    "restartMessage": "The app needs to restart to apply the new layout direction."
+  },
+  "tabs": {
+    "overview": "Overview",
+    "leaderboard": "Leaderboard",
+    "challenges": "Challenges",
+    "tournament": "Tournament",
+    "games": "Games"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "signInToContinue": "Sign in to continue",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "error": "Error",
+    "fillAllFields": "Please fill in all fields",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up"
+  }
+}

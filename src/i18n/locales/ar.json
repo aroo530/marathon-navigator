@@ -1,0 +1,31 @@
+{
+  "common": {
+    "welcome": "أهلاً",
+    "settings": "الإعدادات",
+    "language": "اللغة",
+    "theme": "الشكل",
+    "dark": "غامق",
+    "light": "فاتح",
+    "restartTitle": "محتاجين نعيد التشغيل",
+    "restartMessage": "التطبيق محتاج يتقفل ويتفتح تاني عشان اللغة تشتغل صح."
+  },
+  "tabs": {
+    "overview": "نظرة سريعة",
+    "leaderboard": "الترتيب",
+    "challenges": "التحديات",
+    "tournament": "المسابقة",
+    "games": "الألعاب"
+  },
+  "auth": {
+    "welcomeBack": "يا اهلا يا اهلا!",
+    "signInToContinue": "سجّل دخولك عشان تكمل",
+    "email": "الإيميل",
+    "password": "الباسورد",
+    "signIn": "دخول",
+    "signingIn": "بنجهزلك الدخول...",
+    "error": "فيه مشكلة",
+    "fillAllFields": "محتاج تملى كل الخانات",
+    "noAccount": "معندكش حساب؟",
+    "signUp": "سجّل حساب جديد"
+  }
+}

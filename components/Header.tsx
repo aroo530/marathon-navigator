@@ -1,5 +1,5 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
@@ -9,6 +9,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
@@ -60,6 +61,14 @@ export function Header({
             </View>
           )}
         </View>
+        {title !== 'Profile' && (
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => router.push('/profile')}
+          >
+            <MaterialIcons name="person" size={24} color={Colors.white} />
+          </TouchableOpacity>
+        )}
       </View>
     </ThemedView>
   );
@@ -70,9 +79,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
     backgroundColor: Colors.purple[2],
+    paddingTop: 50,
+    // paddingBottom: 10,
+    marginBottom: 16
   } as ViewStyle,
   content: {
     padding: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   } as ViewStyle,
   row: {
     flexDirection: 'row',
@@ -90,6 +106,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: Font.sizes.h2,
     color: Colors.white,
+    fontWeight: '600',
   } as TextStyle,
   subtitle: {
     marginTop: Spacing.xs,
@@ -99,4 +116,8 @@ const styles = StyleSheet.create({
   rightElement: {
     marginLeft: Spacing.sm,
   } as ViewStyle,
+  profileButton: {
+    padding: 8,
+    color: Colors.white,
+  }
 });

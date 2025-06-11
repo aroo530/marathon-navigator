@@ -3,6 +3,10 @@ import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { I18nManager } from 'react-native';
+import RNRestart from 'react-native-restart';
+
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,6 +19,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 export default function SignInScreen() {
+  const { t, i18n } = useTranslation();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,13 +49,13 @@ export default function SignInScreen() {
       style={styles.container}
     >
       <ThemedView style={styles.content}>
-        <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
-        <ThemedText type="subtitle" style={styles.subtitle}>Sign in to continue</ThemedText>
+        <ThemedText type="title" style={styles.title}>{t('auth.welcomeBack')}</ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>{t('auth.signInToContinue')}</ThemedText>
 
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -58,7 +64,7 @@ export default function SignInScreen() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -71,18 +77,55 @@ export default function SignInScreen() {
             disabled={isLoading}
           >
             <ThemedText type="defaultSemiBold" style={styles.buttonText}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? t('auth.signingIn') : t('auth.signIn')}
             </ThemedText>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <ThemedText type="default">Don't have an account? </ThemedText>
+            <ThemedText type="default">{t('auth.noAccount')}</ThemedText>
             <Link href="/sign-up" asChild>
               <TouchableOpacity>
-                <ThemedText type="defaultSemiBold" style={styles.linkText}>Sign Up</ThemedText>
+                <ThemedText type="defaultSemiBold" style={styles.linkText}>{t('auth.signUp')}</ThemedText>
               </TouchableOpacity>
             </Link>
           </View>
+          <TouchableOpacity
+            onPress={async () => {
+              const nextLang = i18n.language === 'en' ? 'ar' : 'en';
+              const isRTL = nextLang === 'ar';
+
+              await i18n.changeLanguage(nextLang);
+
+              if (I18nManager.isRTL !== isRTL) {
+                I18nManager.forceRTL(isRTL);
+                I18nManager.allowRTL(isRTL);
+                // Restart app to apply layout changes
+                Alert.alert(
+                  t('common.restartTitle'),
+                  t('common.restartMessage'),
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
+                        // Reload the app to apply RTL
+                        if (Platform.OS === 'android') {
+                          RNRestart.Restart();
+                        } else {
+                          // For iOS: quit + reopen manually (or use expo-updates if configured)
+                        }
+                      },
+                    },
+                  ]
+                );
+              }
+            }}
+            style={styles.langButton}
+          >
+            <ThemedText type="defaultSemiBold" style={styles.linkText}>
+              {i18n.language === 'en' ? 'العربية' : 'English'}
+            </ThemedText>
+          </TouchableOpacity>
+
         </View>
       </ThemedView>
     </KeyboardAvoidingView>
@@ -137,5 +180,9 @@ const styles = StyleSheet.create({
   linkText: {
     color: Colors.purple[2],
     marginLeft: Spacing.xs,
+  },
+  langButton: {
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
   },
 }); 

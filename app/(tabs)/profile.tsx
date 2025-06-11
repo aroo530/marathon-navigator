@@ -1,9 +1,11 @@
 // app/(tabs)/profile.tsx - Profile Screen
 import { Colors } from "@/constants/Theme";
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import LanguageSwitcher from "../../src/components/LanguageSwitcher";
 
 export default function ProfileScreen() {
   const { session, userProfile, signOut } = useAuth();
@@ -19,6 +21,11 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.topButtons}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
+          <Ionicons name="chevron-back" size={28} color={Colors.light.textPrimary} />
+        </TouchableOpacity>
+      </View>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           {userProfile?.avatar_url ? (
@@ -54,6 +61,13 @@ export default function ProfileScreen() {
         >
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Language</Text>
+        <View style={styles.languageContainer}>
+          <LanguageSwitcher />
+        </View>
       </View>
 
       <TouchableOpacity
@@ -132,5 +146,17 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: Colors.red[2],
+  },
+  languageContainer: {
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    overflow: 'hidden',
+  },
+  topButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 10,
   },
 });

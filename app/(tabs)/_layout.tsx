@@ -24,10 +24,8 @@ export default function TabLayout() {
   return (
     <MarathonProvider>
       <FamilyProvider>
-
         <Stack
           screenOptions={{
-            // no header
             header: () => null,
           }}
         >
@@ -43,6 +41,5 @@ export default function TabLayout() {
         </Stack>
       </FamilyProvider>
     </MarathonProvider>
-
   );
 }

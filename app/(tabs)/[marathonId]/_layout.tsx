@@ -1,37 +1,31 @@
-// app/(tabs)/marathon/_layout.tsx - Bottom Tab Navigator for Marathon Context
+// app/(tabs)/marathon/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
 import Toast from "react-native-toast-message";
 
 export default function MarathonLayout() {
+  const { t } = useTranslation();
+
   return (
     <PaperProvider>
-
       <Tabs screenOptions={{ headerShown: false }}>
         <Tabs.Screen
           name="index"
           options={{
-            title: "Overview",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="leaderboard"
-          options={{
-            title: "Leaderboard",
+            title: t('tabs.leaderboard'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="trophy" size={size} color={color} />
             ),
           }}
         />
+ 
         <Tabs.Screen
           name="challenges"
           options={{
-            title: "Challenges",
+            title: t('tabs.challenges'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="flash" size={size} color={color} />
             ),
@@ -40,18 +34,18 @@ export default function MarathonLayout() {
         <Tabs.Screen
           name="tournament"
           options={{
-            title: "Tournament",
+            title: t('tabs.tournament'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="medal" size={size} color={color} />
             ),
           }}
         />
         <Tabs.Screen
-          name='gemes'
+          name="gemes"
           options={{
-            title: "Games",
+            title: t('tabs.games'),
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="medal" size={size} color={color} />
+              <Ionicons name="game-controller" size={size} color={color} />
             ),
           }}
         />

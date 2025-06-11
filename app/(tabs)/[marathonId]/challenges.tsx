@@ -25,6 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function ChallengesScreen() {
   const { marathonId } = useLocalSearchParams();
@@ -43,6 +44,17 @@ export default function ChallengesScreen() {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const showToast = (type: 'success' | 'error', title: string, message: string) => {
+    Toast.show({
+      type,
+      text1: title,
+      text2: message,
+      position: 'top',
+      topOffset: 100,
+      visibilityTime: 3000,
+      autoHide: true,
+    });
+  };
   // 1. Load all weeks & auto-detect current one
   const loadWeeks = async () => {
     if (!currentMarathonId) return;
@@ -60,7 +72,9 @@ export default function ChallengesScreen() {
       setSelectedWeekId(current?.id ?? allWeeks[0]?.id ?? null);
     } catch (err) {
       console.error('Error loading weeks', err);
-      setError('Could not load weeks.');
+      const msg = err instanceof Error ? err.message : 'Could not load weeks.';
+      showToast('error', 'Error', msg);
+      setError(msg);
     }
   };
 
@@ -90,14 +104,16 @@ export default function ChallengesScreen() {
 
   // Kick off weeks load when marathon & family ready
   useEffect(() => {
-    if (currentMarathonId && currentFamily) {
-      loadWeeks();
-    }
+    if (!currentMarathonId || !currentFamily) return;
+    loadWeeks();
+
   }, [currentMarathonId, currentFamily]);
 
   // Fetch challenges when week selection changes
   useEffect(() => {
-    fetchChallenges();
+    if (selectedWeekId != null && currentFamily) {
+      fetchChallenges();
+    }
   }, [selectedWeekId, currentFamily]);
 
   const handleChallengePress = (challenge: Challenge) => {
@@ -115,9 +131,14 @@ export default function ChallengesScreen() {
         selectedChallenge.week_challenge_id,
         selectedChallenge.id
       );
+      showToast('success', 'Success', 'Score updated successfully!');
+
       fetchChallenges();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update challenge');
+      const message = err instanceof Error ? err.message : 'Failed to update challenge';
+      showToast('error', 'Error', message);
+      setError(message);
+
     }
   };
 

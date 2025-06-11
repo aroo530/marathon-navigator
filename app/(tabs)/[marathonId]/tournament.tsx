@@ -27,6 +27,7 @@ import {
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 type Week = {
   id: number;
@@ -41,6 +42,17 @@ type ConfirmationModalProps = {
   newWinnerId: number | null;
   onConfirm: () => void;
   onCancel: () => void;
+};
+const showToast = (type: 'success' | 'error', title: string, message: string) => {
+  Toast.show({
+    type,
+    text1: title,
+    text2: message,
+    position: 'top',
+    topOffset: 100,
+    visibilityTime: 3000,
+    autoHide: true,
+  });
 };
 
 const ConfirmationModal = ({
@@ -211,7 +223,7 @@ export default function TournamentScreen() {
       );
       if (result.success) {
         await loadTournament();
-        Alert.alert('Success', result.message);
+        showToast('success', 'Success', result.message);
       } else {
         Alert.alert('Error', 'Failed to update match result');
       }
