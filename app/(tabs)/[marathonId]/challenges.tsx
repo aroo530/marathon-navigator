@@ -235,17 +235,13 @@ export default function ChallengesScreen() {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={[
-                          styles.statusButton,
-                          !!challenge.points_awarded && styles.statusButtonCompleted
-                        ]}
+                        style={styles.statusButton}
                         onPress={() => handleChallengePress(challenge)}
                       >
-                        <Text style={[
-                          styles.statusButtonText,
-                          !!challenge.points_awarded && styles.statusButtonTextCompleted
-                        ]}>
-                          {challenge.points_awarded ? t('challenges.completed') : t('challenges.markComplete')}
+                        <Text style={styles.statusButtonText}>
+                          {challenge.points_awarded
+                            ? t('challenges.editScore')   // new translation key “Edit Score”
+                            : t('challenges.markComplete')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -262,6 +258,8 @@ export default function ChallengesScreen() {
             visible={modalVisible}
             challenge={selectedChallenge}
             totalFamilyMembers={currentFamily?.member_count ?? 1}
+            initialPoints={selectedChallenge.points_awarded ?? 0}
+            initialPercentage={selectedChallenge.percentage_score ?? 0}
             onClose={() => setModalVisible(false)}
             onSubmit={handleScoreSubmit}
           />
@@ -387,19 +385,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.medium,
   },
-  statusButtonCompleted: {
-    backgroundColor: Colors.teal[2],
-    // disable button
-    opacity: 0.5,
-    pointerEvents: 'none',
-  },
   statusButtonText: {
     color: Colors.teal[3],
     fontSize: Font.sizes.caption,
     fontWeight: '600',
-  },
-  statusButtonTextCompleted: {
-    color: Colors.white,
   },
   weekSelectorContainer: {
     width: '100%',

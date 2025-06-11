@@ -4,11 +4,12 @@
     "currentWeek": "Current Week Challenges",
     "general": "General Challenges",
     "weekly": "Weekly",
-    "markComplete": "Mark Complete",
     "completed": "Completed",
-    "success": "Success",
-    "scoreUpdated": "Score updated successfully!",
-    "updateFailed": "Failed to update challenge"
+    "markComplete": "Mark Complete",
+    "editScore": "Edit Score",
+    "success": "Success!",
+    "scoreUpdated": "Your score has been updated.",
+    "updateFailed": "Could not update score."
   },
   "common": {
     "welcome": "Welcome",

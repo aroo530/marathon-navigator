@@ -14,6 +14,9 @@ export type Challenge = {
     created_at: string;
     editable_by_roles: string[];  // Array of role names that can edit this challenge
     week_challenge_id?: number;  // ID from the week_challenges table
+    points_awarded?: number,
+    percentage_score?: number,
+
 };
 
 export type ChallengeWithProgress = Challenge & {
@@ -86,7 +89,6 @@ export const fetchMarathonChallenges = async (
             p_family_id: familyId,
             p_week_id: weekId || null
         });
-
     if (error) {
         console.error('Error fetching challenges:', error);
         throw error;
@@ -115,19 +117,18 @@ export const updateChallengeScore = async (
     weekChallengeId?: number,
     challengeId?: number,
 ): Promise<void> => {
-    const { error } = await supabase
-        .from('family_scores')
-        .upsert({
-            family_id: familyId,
-            week_challenge_id: weekChallengeId,
-            challenge_id: challengeId,
-            points_awarded: pointsAwarded,
-            percentage_score: percentageScore,
-            submitted_at: new Date().toISOString()
+    const { data, error } = await supabase
+        .rpc('upsert_family_score', {
+            p_family_id: familyId,
+            p_week_challenge_id: weekChallengeId,  // null for general
+            p_challenge_id: challengeId,
+            p_points_awarded: pointsAwarded,
+            p_percentage_score: percentageScore,  // or null for non-percentage
         });
 
     if (error) {
         console.error('Error updating challenge score:', error);
+        console.log(error)
         throw error;
     }
 };
@@ -471,111 +472,3 @@ export const getExistingScore = async (
         notes: data.notes || undefined
     };
 };
-
-/*
-Required RPC Functions to create in Supabase:
-
-1. get_recent_game_entries:
-CREATE OR REPLACE FUNCTION get_recent_game_entries(
-    p_marathon_id INTEGER,
-    p_limit INTEGER DEFAULT 10
-)
-RETURNS TABLE (
-    id INTEGER,
-    family_id INTEGER,
-    family_name VARCHAR,
-    challenge_id INTEGER,
-    challenge_title VARCHAR,
-    game_type VARCHAR,
-    points_awarded INTEGER,
-    submitted_at TIMESTAMP WITH TIME ZONE,
-    submitted_by UUID,
-    notes TEXT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        fs.id,
-        fs.family_id,
-        f.name as family_name,
-        fs.challenge_id,
-        c.title as challenge_title,
-        COALESCE(c.game_type, '') as game_type,
-        fs.points_awarded,
-        fs.submitted_at,
-        fs.submitted_by,
-        fs.notes
-    FROM family_scores fs
-    JOIN families f ON fs.family_id = f.id
-    JOIN challenges c ON fs.challenge_id = c.id
-    WHERE f.marathon_id = p_marathon_id
-      AND c.challenge_type = 'game'
-    ORDER BY fs.submitted_at DESC
-    LIMIT p_limit;
-END;
-$$ LANGUAGE plpgsql;
-
-2. get_game_leaderboard:
-CREATE OR REPLACE FUNCTION get_game_leaderboard(p_marathon_id INTEGER)
-RETURNS TABLE (
-    family_id INTEGER,
-    family_name VARCHAR,
-    total_points BIGINT,
-    game_count BIGINT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        f.id as family_id,
-        f.name as family_name,
-        COALESCE(SUM(fs.points_awarded), 0) as total_points,
-        COUNT(fs.id) as game_count
-    FROM families f
-    LEFT JOIN family_scores fs ON f.id = fs.family_id
-    LEFT JOIN challenges c ON fs.challenge_id = c.id AND c.challenge_type = 'game'
-    WHERE f.marathon_id = p_marathon_id
-    GROUP BY f.id, f.name
-    ORDER BY total_points DESC, game_count DESC;
-END;
-$$ LANGUAGE plpgsql;
-
-3. get_family_game_stats:
-CREATE OR REPLACE FUNCTION get_family_game_stats(
-    p_family_id INTEGER,
-    p_marathon_id INTEGER
-)
-RETURNS TABLE (
-    total_points BIGINT,
-    games_played BIGINT,
-    average_score NUMERIC,
-    best_game VARCHAR,
-    best_score INTEGER
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        COALESCE(SUM(fs.points_awarded), 0) as total_points,
-        COUNT(fs.id) as games_played,
-        CASE 
-            WHEN COUNT(fs.id) > 0 THEN ROUND(AVG(fs.points_awarded), 2)
-            ELSE 0
-        END as average_score,
-        (
-            SELECT c.title 
-            FROM family_scores fs2 
-            JOIN challenges c ON fs2.challenge_id = c.id 
-            WHERE fs2.family_id = p_family_id 
-              AND c.challenge_type = 'game'
-            ORDER BY fs2.points_awarded DESC 
-            LIMIT 1
-        ) as best_game,
-        COALESCE(MAX(fs.points_awarded), 0) as best_score
-    FROM family_scores fs
-    JOIN challenges c ON fs.challenge_id = c.id
-    JOIN families f ON fs.family_id = f.id
-    WHERE fs.family_id = p_family_id
-      AND f.marathon_id = p_marathon_id
-      AND c.challenge_type = 'game';
-END;
-$$ LANGUAGE plpgsql;
-*/

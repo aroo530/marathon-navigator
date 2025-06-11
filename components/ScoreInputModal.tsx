@@ -4,6 +4,7 @@ import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { Challenge, canUserEditChallenge } from '@/services/challenges';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +19,8 @@ type Props = {
   visible: boolean;
   challenge: Challenge;
   totalFamilyMembers: number;
+  initialPoints: number;
+  initialPercentage: number;
   onClose: () => void;
   onSubmit: (points: number, percentage?: number) => Promise<void>;
 };
@@ -26,60 +29,72 @@ export default function ScoreInputModal({
   visible,
   challenge,
   totalFamilyMembers,
+  initialPoints = 0,
+  initialPercentage = 0,
   onClose,
-  onSubmit,
+  onSubmit
 }: Props) {
+  const { t } = useTranslation();
   const { userProfile } = useAuth();
   const [completedMembers, setCompletedMembers] = useState('');
   const [manualPoints, setManualPoints] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Check if user has permission to edit this challenge
+  // Check permission
   const canEdit = canUserEditChallenge(challenge, userProfile?.role);
 
+  // Initialize inputs when modal opens
+  useEffect(() => {
+    if (!visible) return;
+
+    if (challenge.uses_percentage_based_scoring) {
+      const members = Math.round((initialPercentage / 100) * totalFamilyMembers);
+      setCompletedMembers(isNaN(members) ? '' : String(members));
+    } else {
+      setManualPoints(initialPoints > 0 ? String(initialPoints) : '');
+    }
+  }, [visible, initialPoints, initialPercentage, challenge.uses_percentage_based_scoring, totalFamilyMembers]);
+
+  // Deny access if not allowed
   useEffect(() => {
     if (visible && !canEdit) {
       Alert.alert(
-        'Access Denied',
-        'You do not have permission to edit this challenge.',
-        [{ text: 'OK', onPress: onClose }]
+        t('common.accessDenied', 'Access Denied'),
+        t('challenges.noPermission', 'You do not have permission to edit this challenge.'),
+        [{ text: t('common.ok', 'OK'), onPress: onClose }]
       );
     }
   }, [visible, canEdit]);
 
   const handleSubmit = async () => {
     if (!canEdit) {
-      Alert.alert('Error', 'You do not have permission to edit this challenge');
-      return;
+      return Alert.alert(t('common.error', 'Error'), t('challenges.noPermission', 'You do not have permission to edit this challenge'));
     }
 
     try {
       setLoading(true);
 
       if (challenge.uses_percentage_based_scoring) {
-        const members = parseInt(completedMembers);
+        const members = parseInt(completedMembers, 10);
         if (isNaN(members) || members < 0 || members > totalFamilyMembers) {
-          Alert.alert('Error', `Please enter a number between 0 and ${totalFamilyMembers}`);
-          return;
+          return Alert.alert(t('common.error', 'Error'), t('challenges.invalidCount', `Please enter a number between 0 and ${totalFamilyMembers}`));
         }
-
         const percentage = (members / totalFamilyMembers) * 100;
         await onSubmit(challenge.points, percentage);
       } else {
-        const points = parseInt(manualPoints);
+        const points = parseInt(manualPoints, 10);
         if (isNaN(points) || points < 0 || points > challenge.points) {
-          Alert.alert('Error', `Please enter a number between 0 and ${challenge.points}`);
-          return;
+          return Alert.alert(t('common.error', 'Error'), t('challenges.invalidPoints', `Please enter a number between 0 and ${challenge.points}`));
         }
-
         await onSubmit(points);
       }
 
+      // Reset
       setCompletedMembers('');
       setManualPoints('');
       onClose();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit score');
+    } catch {
+      Alert.alert(t('common.error', 'Error'), t('challenges.submitFailed', 'Failed to submit score'));
     } finally {
       setLoading(false);
     }
@@ -87,16 +102,16 @@ export default function ScoreInputModal({
 
   if (!canEdit) return null;
 
+  // Dynamic title
+  const titleKey = challenge.points_awarded ? 'challenges.editScore' : 'challenges.completeChallenge';
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <ThemedView style={styles.modalContent}>
-          <ThemedText type="title" style={styles.title}>Complete Challenge</ThemedText>
+          <ThemedText type="title" style={styles.title}>
+            {t(titleKey, challenge.points_awarded ? 'Edit Score' : 'Complete Challenge')}
+          </ThemedText>
           <ThemedText type="subtitle" style={styles.challengeTitle}>{challenge.title}</ThemedText>
 
           {loading ? (
@@ -104,44 +119,44 @@ export default function ScoreInputModal({
           ) : challenge.uses_percentage_based_scoring ? (
             <>
               <ThemedText type="defaultSemiBold" style={styles.label}>
-                How many family members completed this challenge?
+                {t('challenges.howManyCompleted', 'How many family members completed this challenge?')}
               </ThemedText>
               <TextInput
                 style={styles.input}
                 keyboardType="number-pad"
                 value={completedMembers}
                 onChangeText={setCompletedMembers}
-                placeholder={`Enter number (0-${totalFamilyMembers})`}
+                placeholder={t('challenges.enterNumber', `Enter number (0-${totalFamilyMembers})`)}
               />
             </>
           ) : (
             <>
               <ThemedText type="defaultSemiBold" style={styles.label}>
-                Enter points for this challenge
+                {t('challenges.enterPoints', 'Enter points for this challenge')}
               </ThemedText>
               <TextInput
                 style={styles.input}
                 keyboardType="number-pad"
                 value={manualPoints}
                 onChangeText={setManualPoints}
-                placeholder={`Enter points (0-${challenge.points})`}
+                placeholder={t('challenges.enterPointsPlaceholder', `Enter points (0-${challenge.points})`)}
               />
               <ThemedText type="default" style={styles.maxPoints}>
-                Maximum points available: {challenge.points}
+                {t('challenges.maxPoints', 'Maximum points available:')} {challenge.points}
               </ThemedText>
             </>
           )}
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>Cancel</ThemedText>
+              <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>{t('common.cancel', 'Cancel')}</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={loading}
             >
-              <ThemedText style={styles.submitButtonText}>Submit</ThemedText>
+              <ThemedText style={styles.submitButtonText}>{t('common.submit', 'Submit')}</ThemedText>
             </TouchableOpacity>
           </View>
         </ThemedView>
@@ -214,4 +229,4 @@ const styles = StyleSheet.create({
     fontSize: Font.sizes.body,
     fontWeight: '600',
   },
-}); 
+});

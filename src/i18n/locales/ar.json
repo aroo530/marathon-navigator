@@ -8,7 +8,8 @@
     "completed": "مرصود",
     "success": "تمام",
     "scoreUpdated": "تم تحديث السكور بنجاح!",
-    "updateFailed": "فشل في تحديث التحدي"
+    "updateFailed": "فشل في تحديث التحدي",
+    "editScore": "عدل السكور"
   },
   "common": {
     "welcome": "أهلاً",
