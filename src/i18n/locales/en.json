@@ -52,9 +52,9 @@
     "noActiveGames": "No active games found for this marathon.",
     "pointsToAward": "Points to Award",
     "updatePoints": "Update Points",
-    "enterPoints": "Enter points (max {max})",
+    "enterPoints": "Enter points (max {{max}})",
     "max": "Max",
-    "previousScore": "Previous score: {points} points",
+    "previousScore": "Previous score: {{points}} points",
     "addScore": "Add Score to Family",
     "updateScore": "Update Score",
     "addingScore": "Adding Score...",
@@ -66,9 +66,9 @@
     "loadingGames": "Loading Game Data...",
     "invalidPoints": "Invalid Points",
     "enterValidPoints": "Please enter a valid number of points.",
-    "pointsExceedMax": "Points cannot exceed the maximum of {max} for this challenge.",
-    "scoreUpdated": "Score updated to {points} points!",
-    "pointsAdded": "{points} points added successfully!",
+    "pointsExceedMax": "Points cannot exceed the maximum of {{max}} for this challenge.",
+    "scoreUpdated": "Score updated to {{points}} points!",
+    "pointsAdded": "{{points}} points added successfully!",
     "limitReached": "Limit Reached",
     "maxScoresReached": "You cannot add more than 3 game scores for this family in the current marathon."
   },
@@ -121,7 +121,7 @@
     },
     "confirmation": {
       "title": "Change Match Result?",
-      "message": "Are you sure you want to change the winner from {currentWinner} to {newWinner}?",
+      "message": "Are you sure you want to change the winner from {{currentWinner}} to {{newWinner}}?",
       "cancel": "Cancel",
       "confirm": "Confirm"
     },

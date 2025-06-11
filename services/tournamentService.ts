@@ -40,7 +40,6 @@ export const getCurrentTournament = async (
         console.error('Error fetching tournament:', error);
         throw error;
     }
-    console.log(data)
     return data || null;
 };
 

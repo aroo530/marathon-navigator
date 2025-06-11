@@ -367,7 +367,7 @@ export default function TournamentScreen() {
   // Main UI
   return (
     <View style={styles.container}>
-      <Header title={tournament.title} subtitle={tournament.description} />
+      <Header title={t('tournament.title')} />
 
       <ScrollView
         style={styles.scrollView}

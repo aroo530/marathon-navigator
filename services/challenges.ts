@@ -370,7 +370,6 @@ export const updateGameScore = async (
 
     if (error) {
         console.error('Error updating game score:', error);
-        console.log('err', error)
         throw error;
     }
 };

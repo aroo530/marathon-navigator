@@ -139,7 +139,6 @@ export default function Games() {
     };
 
     const handleRefreshRecent = async () => {
-        console.log("Here")
         const updatedRecent = await fetchRecentEntries();
         setRecent(updatedRecent);
     };

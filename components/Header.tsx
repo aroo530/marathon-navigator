@@ -9,10 +9,8 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
-import { ThemedView } from './ThemedView';
 
 type HeaderProps = {
   title: string;
@@ -27,97 +25,100 @@ export function Header({
   subtitle,
   showBack = true,
   onBack,
-  rightElement
+  rightElement,
 }: HeaderProps) {
-  const iconColor = Colors.white;
   const insets = useSafeAreaInsets();
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      router.back();
-    }
-  };
+  const handleBack = () => (onBack ? onBack() : router.back());
 
   return (
-    <ThemedView style={[styles.header, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
-        <View style={styles.row}>
-          {showBack && (
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color={iconColor} />
-            </TouchableOpacity>
-          )}
-          <View style={styles.titleContainer}>
-            <ThemedText type="title" style={styles.title}>{title}</ThemedText>
-            {/* {subtitle && (
-              <ThemedText type="subtitle" style={styles.subtitle}>{subtitle}</ThemedText>
-            )} */}
-          </View>
-          {rightElement && (
-            <View style={styles.rightElement}>
-              {rightElement}
-            </View>
-          )}
-        </View>
-        {title !== 'Profile' && (
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => router.push('/profile')}
-          >
-            <MaterialIcons name="person" size={24} color={Colors.white} />
+    <View
+      style={[
+        styles.header,
+        {
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
+      <View style={styles.container}>
+        {showBack && (
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={Colors.white} />
           </TouchableOpacity>
         )}
+
+        <View style={styles.titleContainer}>
+          <ThemedText type="title" style={styles.title}>
+            {title}
+          </ThemedText>
+          {subtitle && (
+            <ThemedText type="subtitle" style={styles.subtitle}>
+              {subtitle}
+            </ThemedText>
+          )}
+        </View>
+
+        <View style={styles.rightContainer}>
+          {rightElement && <View style={styles.rightElement}>{rightElement}</View>}
+          {title !== 'Profile' && (
+            <TouchableOpacity
+              onPress={() => router.push('/profile')}
+              style={styles.profileButton}
+            >
+              <MaterialIcons name="person" size={24} color={Colors.white} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.cardBorder,
     backgroundColor: Colors.purple[2],
-    paddingTop: 50,
-    // paddingBottom: 10,
-    marginBottom: 16
   } as ViewStyle,
-  content: {
-    padding: Spacing.md,
+
+  container: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    padding: Spacing.md,
   } as ViewStyle,
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  } as ViewStyle,
+
   backButton: {
-    marginRight: Spacing.sm,
     padding: Spacing.xs,
     borderRadius: BorderRadius.medium,
-    // backgroundColor: Colors.white,
   } as ViewStyle,
+
   titleContainer: {
     flex: 1,
+    marginHorizontal: Spacing.sm,
   } as ViewStyle,
+
   title: {
     fontSize: Font.sizes.h2,
     color: Colors.white,
     fontWeight: '600',
   } as TextStyle,
+
   subtitle: {
     marginTop: Spacing.xs,
-    color: Colors.white,
     fontSize: Font.sizes.caption,
-  } as TextStyle,
-  rightElement: {
-    marginLeft: Spacing.sm,
-  } as ViewStyle,
-  profileButton: {
-    padding: 8,
     color: Colors.white,
-  }
+  } as TextStyle,
+
+  rightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  } as ViewStyle,
+
+  rightElement: {
+    marginRight: Spacing.sm,
+  } as ViewStyle,
+
+  profileButton: {
+    padding: Spacing.xs,
+  } as ViewStyle,
 });

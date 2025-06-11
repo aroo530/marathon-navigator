@@ -26,7 +26,7 @@
     "overview": "نظرة سريعة",
     "leaderboard": "الترتيب",
     "challenges": "التحديات",
-    "tournament": "المسابقة",
+    "tournament": "الدوري",
     "games": "الألعاب"
   },
   "auth": {
@@ -52,9 +52,9 @@
     "noActiveGames": "مفيش ألعاب نشطة في الماراثون ده.",
     "pointsToAward": "النقاط اللي هتحطها",
     "updatePoints": "تحديث النقاط",
-    "enterPoints": "اكتب النقاط (أكتر حاجة {max})",
+    "enterPoints": "اكتب النقاط (أكتر حاجة {{max}})",
     "max": "أكتر حاجة",
-    "previousScore": "النقاط اللي فاتت: {points} نقطة",
+    "previousScore": "النقاط اللي فاتت: {{points}} نقطة",
     "addScore": "ضيف نقاط للعيلة",
     "updateScore": "حدث النقاط",
     "addingScore": "بضيف النقاط...",
@@ -66,9 +66,9 @@
     "loadingGames": "بجيب بيانات الألعاب...",
     "invalidPoints": "النقاط مش صح",
     "enterValidPoints": "اكتب رقم صحيح للنقاط.",
-    "pointsExceedMax": "النقاط مش ممكن تزيد عن {max} في التحدي ده.",
-    "scoreUpdated": "تم تحديث النقاط لـ {points} نقطة!",
-    "pointsAdded": "تم إضافة {points} نقطة بنجاح!",
+    "pointsExceedMax": "النقاط مش ممكن تزيد عن {{max}} في التحدي ده.",
+    "scoreUpdated": "تم تحديث النقاط لـ {{points}} نقطة!",
+    "pointsAdded": "تم إضافة {{points}} نقطة بنجاح!",
     "limitReached": "وصلت للحد الأقصى",
     "maxScoresReached": "مش ممكن تضيف أكتر من 3 نقاط للعيلة دي في الماراثون الحالي."
   },
@@ -103,13 +103,13 @@
     "signOutError": "فشل تسجيل الخروج"
   },
   "tournament": {
-    "title": "المسابقة",
+    "title": "الدوري",
     "noActiveTournament": "مفيش مسابقة نشطة دلوقتي",
     "week": "أسبوع {{number}}",
     "matches": "المباريات",
     "noMatches": "مفيش مباريات في الأسبوع ده",
     "stats": {
-      "title": "إحصائيات المسابقة",
+      "title": "إحصائيات الدوري",
       "totalMatches": "إجمالي المباريات",
       "completedMatches": "المباريات المكتملة",
       "status": "الحالة"
@@ -121,7 +121,7 @@
     },
     "confirmation": {
       "title": "تغيير نتيجة المباراة؟",
-      "message": "انت متأكد انك عايز تغير الفايز من {currentWinner} لـ {newWinner}؟",
+      "message": "انت متأكد انك عايز تغير الفايز من {{currentWinner}} لـ {{newWinner}}؟",
       "cancel": "إلغاء",
       "confirm": "تأكيد"
     },

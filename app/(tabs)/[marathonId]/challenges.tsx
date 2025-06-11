@@ -160,7 +160,7 @@ export default function ChallengesScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Header title="Challenges" />
+        <Header title={t('challenges.title')} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchChallenges}>
@@ -173,7 +173,7 @@ export default function ChallengesScreen() {
 
   return (
     <>
-      <Header title="Challenges" />
+      <Header title={t('challenges.title')} />
       <SafeAreaView style={styles.safeArea}>
         {/* Week selector */}
         <ScrollView

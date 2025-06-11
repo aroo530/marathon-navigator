@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import LanguageSwitcher from "../../src/components/LanguageSwitcher";
 
@@ -22,67 +22,73 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topButtons}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
-          <Ionicons name="chevron-back" size={28} color={Colors.light.textPrimary} />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          {userProfile?.avatar_url ? (
-            <Image
-              source={{ uri: userProfile.avatar_url }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.placeholderAvatar]}>
-              <Text style={styles.avatarText}>
-                {session?.user?.email?.[0].toUpperCase()}
-              </Text>
-            </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.topButtons}>
+          <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
+            <Ionicons name="chevron-back" size={28} color={Colors.light.textPrimary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            {userProfile?.avatar_url ? (
+              <Image
+                source={{ uri: userProfile.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={[styles.avatar, styles.placeholderAvatar]}>
+                <Text style={styles.avatarText}>
+                  {session?.user?.email?.[0].toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.email}>{session?.user?.email}</Text>
+          {userProfile?.full_name && (
+            <Text style={styles.name}>{userProfile.full_name}</Text>
           )}
         </View>
-        <Text style={styles.email}>{session?.user?.email}</Text>
-        {userProfile?.full_name && (
-          <Text style={styles.name}>{userProfile.full_name}</Text>
-        )}
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.accountSettings')}</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
-        >
-          <Text style={styles.buttonText}>{t('profile.editProfile')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
-        >
-          <Text style={styles.buttonText}>{t('profile.changePassword')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
-        <View style={styles.languageContainer}>
-          <LanguageSwitcher />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.accountSettings')}</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
+          >
+            <Text style={styles.buttonText}>{t('profile.editProfile')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => Alert.alert(t('profile.comingSoon'), t('profile.featureNotAvailable'))}
+          >
+            <Text style={styles.buttonText}>{t('profile.changePassword')}</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      <TouchableOpacity
-        style={[styles.button, styles.signOutButton]}
-        onPress={handleSignOut}
-      >
-        <Text style={[styles.buttonText, styles.signOutText]}>{t('profile.signOut')}</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
+          <View style={styles.languageContainer}>
+            <LanguageSwitcher />
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.button, styles.signOutButton]}
+          onPress={handleSignOut}
+        >
+          <Text style={[styles.buttonText, styles.signOutText]}>{t('profile.signOut')}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
