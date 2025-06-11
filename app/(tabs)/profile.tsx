@@ -50,7 +50,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.accountSettings')}</Text>
           <TouchableOpacity
             style={styles.button}
@@ -64,7 +64,7 @@ export default function ProfileScreen() {
           >
             <Text style={styles.buttonText}>{t('profile.changePassword')}</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.language')}</Text>

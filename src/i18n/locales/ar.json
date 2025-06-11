@@ -4,8 +4,8 @@
     "currentWeek": "تحديات الأسبوع",
     "general": "تحديات عامة",
     "weekly": "أسبوعي",
-    "markComplete": "علامة كمكتملة",
-    "completed": "مكتملة",
+    "markComplete": "ارصد الدرجه",
+    "completed": "مرصود",
     "success": "تمام",
     "scoreUpdated": "تم تحديث السكور بنجاح!",
     "updateFailed": "فشل في تحديث التحدي"
@@ -135,5 +135,11 @@
     "success": {
       "matchUpdated": "تم تحديث نتيجة المباراة بنجاح"
     }
+  },
+  "home": {
+    "tournamentTitle": "الماراثونات",
+    "activeMarathon": "الماراثون النشط",
+    "endsOn": "ينتهي في {{date}}",
+    "availableMarathons": "الماراثونات المتاحة"
   }
 }

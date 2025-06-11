@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Image,
@@ -11,39 +12,39 @@ import {
   View,
 } from "react-native";
 
+import { Header } from "@/components/Header";
 import MarathonCard from "@/components/marathon/MarathonCard";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { useAuth } from "@/context/AuthContext";
 import { useFamily } from "@/context/FamilyContext";
-import { getCurrentFamily } from "@/services/familyService"; // adjust path as needed
+import { getCurrentFamily } from "@/services/familyService";
 import { router } from "expo-router";
 import type { Marathon } from "../../context/MarathonContext";
 import { useMarathon } from "../../context/MarathonContext";
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { marathons, loading, refreshMarathons, setSelectedMarathon } = useMarathon();
-  const featuredMarathon = marathons[0];
+  const featured = marathons[0];
   const { userProfile } = useAuth();
   const { setCurrentFamily } = useFamily();
 
-  const onSelectMarathon = async (marathon: Marathon) => {
-    setSelectedMarathon(marathon);
-    // Fetch and store family
+  const onSelect = async (m: Marathon) => {
+    setSelectedMarathon(m);
     if (userProfile?.id) {
       try {
-        const family = await getCurrentFamily(marathon.id, userProfile.id);
-        if (family) {
-          setCurrentFamily(family);
-        }
+        const fam = await getCurrentFamily(m.id, userProfile.id);
+        fam && setCurrentFamily(fam);
       } catch (err) {
-        console.error("Failed to fetch family:", err);
+        console.error("fetch family failed:", err);
       }
     }
-    router.push(`/${marathon.id}`);
+    router.push(`/${m.id}`);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Header title={t("home.tournamentTitle")} />
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -51,22 +52,25 @@ export default function HomeScreen() {
           <RefreshControl refreshing={loading} onRefresh={refreshMarathons} />
         }
       >
-        {/* Featured Marathon */}
-        {featuredMarathon && (
-          <TouchableOpacity onPress={() => onSelectMarathon(featuredMarathon)}>
+        {featured && (
+          <TouchableOpacity onPress={() => onSelect(featured)}>
             <View style={styles.featuredCard}>
               <View style={styles.featuredContent}>
-                <Text style={styles.featuredTitle}>Active Marathon</Text>
+                <Text style={styles.featuredTitle}>
+                  {t("home.activeMarathon")}
+                </Text>
                 <Text style={styles.featuredSubtitle}>
-                  {featuredMarathon.title}
+                  {featured.title}
                 </Text>
                 <Text style={styles.endsInText}>
-                  Ends on {new Date(featuredMarathon.end_date).toDateString()}
+                  {t("home.endsOn", {
+                    date: new Date(featured.end_date).toLocaleDateString(),
+                  })}
                 </Text>
               </View>
-              {featuredMarathon.picture_url && (
+              {featured.picture_url && (
                 <Image
-                  source={{ uri: featuredMarathon.picture_url }}
+                  source={{ uri: featured.picture_url }}
                   style={styles.featuredImage}
                 />
               )}
@@ -74,22 +78,25 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Available Marathons */}
-        <Text style={styles.sectionTitle}>Available Marathons</Text>
+        <Text style={styles.sectionTitle}>
+          {t("home.availableMarathons")}
+        </Text>
 
-        {loading && <ActivityIndicator size="large" color={Colors.purple[2]} />}
+        {loading && (
+          <ActivityIndicator size="large" color={Colors.purple[2]} />
+        )}
 
         <View style={styles.marathonList}>
-          {marathons.map((marathon) => (
+          {marathons.map((m) => (
             <MarathonCard
-              key={marathon.id}
-              title={marathon.title}
-              description={marathon.description}
-              picture_url={marathon.picture_url || ''}
-              startDate={marathon.start_date}
-              endDate={marathon.end_date}
-              familyCount={marathon.family_count}
-              onPress={() => onSelectMarathon(marathon)}
+              key={m.id}
+              title={m.title}
+              description={m.description}
+              picture_url={m.picture_url || ""}
+              startDate={m.start_date}
+              endDate={m.end_date}
+              familyCount={m.family_count}
+              onPress={() => onSelect(m)}
             />
           ))}
         </View>
@@ -97,6 +104,8 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+// …styles stay exactly the same…
 
 const styles = StyleSheet.create({
   safeArea: {

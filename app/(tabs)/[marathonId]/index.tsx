@@ -203,7 +203,7 @@ export default function LeaderboardScreen() {
       <View style={styles.container}>
         <Header
           title={selectedMarathon?.title || t('leaderboard.title')}
-          subtitle={selectedMarathon?.description}
+          // subtitle={selectedMarathon?.description}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[1]} />
@@ -217,7 +217,7 @@ export default function LeaderboardScreen() {
     <View style={styles.container}>
       <Header
         title={selectedMarathon?.title || t('leaderboard.title')}
-        subtitle={selectedMarathon?.description}
+        // subtitle={selectedMarathon?.description}
       />
 
       <FlatList

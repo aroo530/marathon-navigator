@@ -1,6 +1,6 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 import React from 'react';
 import {
   StyleSheet,
@@ -28,7 +28,16 @@ export function Header({
   rightElement,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
-  const handleBack = () => (onBack ? onBack() : router.back());
+  const segments = useSegments();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (segments.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
 
   return (
     <View

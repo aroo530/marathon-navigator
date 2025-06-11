@@ -135,5 +135,11 @@
     "success": {
       "matchUpdated": "Match result updated successfully"
     }
+  },
+  "home": {
+    "tournamentTitle": "Tournaments",
+    "activeMarathon": "Active Marathon",
+    "endsOn": "Ends on {{date}}",
+    "availableMarathons": "Available Marathons"
   }
 }
