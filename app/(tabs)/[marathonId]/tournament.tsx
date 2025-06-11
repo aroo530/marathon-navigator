@@ -121,6 +121,7 @@ export default function TournamentScreen() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -160,11 +161,21 @@ export default function TournamentScreen() {
     if (!currentMarathonId || selectedWeek == null) return;
     try {
       setLoading(true);
+      setError(null);
       const data = await getCurrentTournament(currentMarathonId, selectedWeek);
-      setTournament(data);
+      if (!data) {
+        setError(t('tournament.errors.noDataForWeek'));
+        setTournament(null);
+      } else {
+        setTournament({
+          ...data,
+          matches: data.matches ?? []    // ← force empty array
+        });
+      }
     } catch (err) {
       console.error('Error loading tournament:', err);
-      Alert.alert(t('common.error'), t('tournament.errors.loadTournament'));
+      setError(t('tournament.errors.loadTournament'));
+      setTournament(null);
     } finally {
       setLoading(false);
     }
@@ -172,6 +183,7 @@ export default function TournamentScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setError(null);
     await loadTournament();
     setRefreshing(false);
   };
@@ -293,6 +305,34 @@ export default function TournamentScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.purple[1]} />
         </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Header title={t('tournament.title')} />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.centerContainer,
+            { paddingBottom: insets.bottom },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.purple[1]}
+            />
+          }
+        >
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTournament}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     );
   }
@@ -643,4 +683,22 @@ const styles = StyleSheet.create({
   cancelButtonText: { textAlign: 'center' },
   confirmButton: { backgroundColor: Colors.purple[2] },
   confirmButtonText: { color: Colors.white, textAlign: 'center' },
+  errorText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginTop: 40,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: Colors.purple[2],
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.medium,
+  },
+  retryButtonText: {
+    color: Colors.white,
+    fontSize: Font.sizes.body,
+    fontWeight: '600',
+  },
 });

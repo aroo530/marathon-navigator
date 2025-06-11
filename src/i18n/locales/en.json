@@ -129,7 +129,8 @@
       "loadWeeks": "Could not load weeks",
       "loadTournament": "Failed to load tournament data",
       "updateMatch": "Failed to update match result",
-      "noPermission": "You do not have permission to update match results"
+      "noPermission": "You do not have permission to update match results",
+      "noDataForWeek": "No tournament data available for this week"
     },
     "success": {
       "matchUpdated": "Match result updated successfully"

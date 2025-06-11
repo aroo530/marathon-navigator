@@ -5,7 +5,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
 import Toast from "react-native-toast-message";
-
 export default function MarathonLayout() {
   const { t } = useTranslation();
 
@@ -21,7 +20,7 @@ export default function MarathonLayout() {
             ),
           }}
         />
- 
+
         <Tabs.Screen
           name="challenges"
           options={{

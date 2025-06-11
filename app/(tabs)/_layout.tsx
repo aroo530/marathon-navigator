@@ -5,6 +5,7 @@ import MarathonProvider from '@/context/MarathonContext';
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import '../../src/i18n/i18n';
 
 export default function TabLayout() {
   const { session, isLoading } = useAuth();
