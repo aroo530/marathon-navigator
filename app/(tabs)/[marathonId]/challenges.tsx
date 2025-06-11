@@ -136,7 +136,6 @@ export default function ChallengesScreen() {
   // inside your component:
   useFocusEffect(
     React.useCallback(() => {
-      console.log("calling back", currentMarathonId, currentFamily)
       // 1) whenever we focus and have marathon+family, load weeks
       if (currentMarathonId && currentFamily) {
         loadWeeks();

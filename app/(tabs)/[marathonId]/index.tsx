@@ -4,7 +4,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getFamilyscoreBreakdownData } from "@/services/familyService";
 import { getLeaderboardData } from "@/services/leaderboard";
-import { format } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -142,15 +141,15 @@ export default function LeaderboardScreen() {
   const renderListHeader = () => {
     if (!leaderboardData.length) return null;
 
-    const topThree = leaderboardData.slice(0, 3);
+    // const topThree = leaderboardData.slice(0, 3);
 
     return (
       <>
-        <View style={styles.dateContainer}>
+        {/* <View style={styles.dateContainer}>
           <ThemedText type="default" style={styles.dates}>
             {format(new Date(selectedMarathon?.start_date || ''), 'MMM d')} - {format(new Date(selectedMarathon?.end_date || ''), 'MMM d, yyyy')}
           </ThemedText>
-        </View>
+        </View> */}
 
         {/* <View style={styles.podiumContainer}>
           <TouchableOpacity
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.large,
     // overflow: "hidden",
-    marginHorizontal: Spacing.md,
+    margin: Spacing.sm,
     // shadowColor: Colors.light.cardShadow,
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,

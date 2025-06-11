@@ -128,7 +128,6 @@ export const updateChallengeScore = async (
 
     if (error) {
         console.error('Error updating challenge score:', error);
-        console.log(error)
         throw error;
     }
 };
