@@ -29,7 +29,7 @@
     "challenges": "Challenges",
     "tournament": "Tournament",
     "games": "Games",
-    "participants":"Participants"
+    "participants": "Participants"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -153,5 +153,33 @@
     "daysAgo": "{{days}} days ago",
     "hoursAgo": "{{hours}} hours ago",
     "justNow": "Just now"
+  },
+  "users": {
+    "participants": "Participants",
+    "addParticipant": "Add Participant",
+    "editParticipant": "Edit Participant",
+    "deleteParticipant": "Delete Participant",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "name": "Name",
+    "email": "Email",
+    "enterName": "Enter full name",
+    "enterEmail": "Enter email address",
+    "loadingParticipants": "Loading participants...",
+    "noParticipants": "No Participants",
+    "getStartedMessage": "Get started by adding your first participant",
+    "created": "Created",
+    "nameRequired": "Name is required",
+    "emailRequired": "Email is required",
+    "success": "Success",
+    "participantCreated": "Participant created successfully",
+    "participantUpdated": "Participant updated successfully",
+    "participantDeleted": "Participant deleted successfully",
+    "error": "Error",
+    "errorLoadingParticipants": "Failed to load participants",
+    "errorSavingParticipant": "Failed to save participant",
+    "errorDeletingParticipant": "Failed to delete participant",
+    "deleteConfirmation": "Are you sure you want to delete {{name}}?"
   }
 }

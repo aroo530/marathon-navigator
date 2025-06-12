@@ -54,6 +54,16 @@ export default function MarathonLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="participants"
+          options={{
+            title: t('tabs.participants'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="people" size={size} color={color} />
+            ),
+          }}
+        />
+
       </Tabs>
       <Toast position="top" />
     </PaperProvider>
