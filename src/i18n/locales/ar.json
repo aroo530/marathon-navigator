@@ -8,14 +8,15 @@
     "completed": "مرصود",
     "success": "تمام",
     "scoreUpdated": "تم تحديث السكور بنجاح!",
+    "scoreAdded": "تم اضافة السكور بنجاح!",
     "updateFailed": "فشل في تحديث التحدي",
     "editScore": "عدل السكور",
     "deleteScore": {
       "title": "امسح السكور",
       "message": "متأكد انك هتمسح السكور؟ مش هنعرف نرجعه تاني"
     },
-    "scoreDeleted": "Score deleted successfully",
-    "deleteFailed": "Failed to delete score"
+    "scoreDeleted": "تم مسح السكور",
+    "deleteFailed": "فشل في مسح السكور"
   },
   "common": {
     "welcome": "أهلاً",
@@ -77,6 +78,7 @@
     "pointsExceedMax": "النقط مش ممكن تزيد عن {{max}} في التحدي ده.",
     "scoreUpdated": "تم تحديث النقط لـ {{points}} نقطة!",
     "pointsAdded": "تم إضافة {{points}} نقطة بنجاح!",
+    "scoreAdded": "تم إضافة {{points}} نقطة بنجاح!",
     "limitReached": "وصلت للحد الأقصى",
     "maxScoresReached": "مش ممكن تضيف أكتر من 3 نقاط للعيلة دي في الماراثون الحالي."
   },
