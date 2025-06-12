@@ -28,7 +28,8 @@
     "leaderboard": "Leaderboard",
     "challenges": "Challenges",
     "tournament": "Tournament",
-    "games": "Games"
+    "games": "Games",
+    "participants":"Participants"
   },
   "auth": {
     "welcomeBack": "Welcome Back",

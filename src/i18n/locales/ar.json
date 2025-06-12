@@ -28,7 +28,8 @@
     "leaderboard": "الترتيب",
     "challenges": "التحديات",
     "tournament": "الدوري",
-    "games": "الألعاب"
+    "games": "الألعاب",
+    "participants": "المشاركين"
   },
   "auth": {
     "welcomeBack": "يا اهلا يا اهلا!",
