@@ -21,8 +21,7 @@
       "package": "com.anonymous.marathonnavigator"
     },
     "web": {
-      "bundler": "metro",
-      "output": "standalone",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [

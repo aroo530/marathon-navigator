@@ -12,6 +12,11 @@
       "distribution": "internal"
     },
     "production": {
+      "android": {
+        "env": {
+          "ANDROID_SDK_ROOT": "/Users/arsanymilad/Library/Android/sdk"
+        }
+      },
       "autoIncrement": true
     }
   },
