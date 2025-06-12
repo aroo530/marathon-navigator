@@ -142,5 +142,15 @@
     "activeMarathon": "Active Marathon",
     "endsOn": "Ends on {{date}}",
     "availableMarathons": "Available Marathons"
+  },
+  "activity": {
+    "noActivity": "No activity yet",
+    "latestSubmissions": "Latest submissions",
+    "recentActivity": "Recent activity",
+    "week": "Week {{number}}",
+    "submittedBy": "Submitted by {{name}}",
+    "daysAgo": "{{days}} days ago",
+    "hoursAgo": "{{hours}} hours ago",
+    "justNow": "Just now"
   }
 }

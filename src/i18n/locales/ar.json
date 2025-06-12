@@ -142,5 +142,15 @@
     "activeMarathon": "الماراثون الحالي",
     "endsOn": "ينتهي في {{date}}",
     "availableMarathons": "الماراثونات المتاحة"
+  },
+  "activity": {
+    "noActivity": "لسه مافيش نشاط",
+    "latestSubmissions": "آخر التسليمات",
+    "recentActivity": "آخر نشاط",
+    "week": "الأسبوع {{number}}",
+    "submittedBy": "اللي قدّمه {{name}}",
+    "daysAgo": "{{days}} يوم فاتوا",
+    "hoursAgo": "{{hours}} ساعة فاتوا",
+    "justNow": "دلوقتي"
   }
 }

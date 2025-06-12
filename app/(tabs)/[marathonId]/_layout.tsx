@@ -10,7 +10,13 @@ export default function MarathonLayout() {
 
   return (
     <PaperProvider>
-      <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs screenOptions={{
+        headerShown: false, tabBarStyle: {
+          // paddingBottom: 8,   // ← add bottom padding here
+          height: 60,         // ← you can tweak the height if needed
+          alignContent: 'center'
+        },
+      }}>
         <Tabs.Screen
           name="index"
           options={{

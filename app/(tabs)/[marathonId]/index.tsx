@@ -3,7 +3,9 @@ import { Header } from "@/components/Header";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { getFamilyscoreBreakdownData } from "@/services/familyService";
-import { getLeaderboardData } from "@/services/leaderboard";
+import { format, parseISO } from 'date-fns';
+
+import { ActivityLog, getLeaderboardData, getLeaderboardLogs } from "@/services/leaderboard";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +15,7 @@ import {
   Image,
   ImageStyle,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextStyle,
@@ -81,6 +84,7 @@ export default function LeaderboardScreen() {
   const { selectedMarathon } = useMarathon();
   const currentMarathonId = selectedMarathon?.id;
   const [leaderboardData, setLeaderboardData] = useState<Family[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
@@ -93,12 +97,27 @@ export default function LeaderboardScreen() {
     setLoading(false);
   };
 
-  // useEffect(() => {
-  //   loadLeaderboardData();
-  // }, [currentMarathonId]);
+
   useFocusEffect(
     React.useCallback(() => {
       loadLeaderboardData();
+    }, [currentMarathonId])
+  );
+  const loadActivityLogs = async () => {
+    setLoading(true);
+    try {
+      const data = await getLeaderboardLogs(Number(currentMarathonId) || 0);
+      setActivityLogs(data);
+    } catch (error) {
+      console.error('Error loading activity logs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadActivityLogs();
     }, [currentMarathonId])
   );
   const handleFamilyPress = async (family: Family) => {
@@ -106,6 +125,21 @@ export default function LeaderboardScreen() {
     setSelectedFamily({ ...family, breakdown: familyBreakdown });
     setModalVisible(true);
   };
+
+  // const formatTimeAgo = (dateString: string) => {
+  //   const now = new Date();
+  //   const submittedDate = new Date(dateString);
+  //   const diffInHours = Math.floor((now.getTime() - submittedDate.getTime()) / (1000 * 60 * 60));
+
+  //   if (diffInHours < 1) {
+  //     return t('activity.justNow');
+  //   } else if (diffInHours < 24) {
+  //     return t('activity.hoursAgo', { hours: diffInHours });
+  //   } else {
+  //     const diffInDays = Math.floor(diffInHours / 24);
+  //     return t('activity.daysAgo', { days: diffInDays });
+  //   }
+  // };
 
   const renderLeaderboardItem = ({ item, index }: { item: Family; index: number }) => (
     <TouchableOpacity
@@ -202,6 +236,48 @@ export default function LeaderboardScreen() {
     );
   };
 
+  const renderActivityItem = ({ item }: { item: ActivityLog }) => (
+    <View style={styles.activityItem}>
+      <View style={styles.activityContent}>
+        <View style={styles.activityHeader}>
+          <Text style={styles.familyName}>{item.family_name}</Text>
+          <View style={styles.pointsBadge}>
+            <Text style={styles.pointsText}>+{item.points_awarded}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.challengeTitle} numberOfLines={2}>
+          {item.challenge_title}
+        </Text>
+
+        <View style={styles.activityFooter}>
+          <Text style={styles.submittedBy}>
+            {t('activity.submittedBy', { name: item.submitted_by_name })}
+          </Text>
+        </View>
+
+        <View style={styles.weekBadge}>
+          <Text style={styles.weekText}>
+            {t('activity.week', { number: item.week_number })}
+          </Text>
+          <Text style={styles.timeAgo}>
+            {format(parseISO(item.submitted_at), 'PPP p')}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderLogsListHeader = () => (
+    <View style={styles.headerContainer}>
+      <ThemedText type="title" style={styles.headerTitle}>
+        {t('activity.recentActivity')}
+      </ThemedText>
+      <ThemedText type="default" style={styles.headerSubtitle}>
+        {t('activity.latestSubmissions')}
+      </ThemedText>
+    </View>
+  );
   if (loading) {
     return (
       <View style={styles.container}>
@@ -218,12 +294,11 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Header
         title={selectedMarathon?.title || t('leaderboard.title')}
       // subtitle={selectedMarathon?.description}
       />
-
       <FlatList
         style={styles.leaderboardContainer}
         data={leaderboardData}
@@ -247,12 +322,37 @@ export default function LeaderboardScreen() {
         }
       />
 
+      <FlatList
+        data={activityLogs}
+        renderItem={renderActivityItem}
+        keyExtractor={(item, index) => `${item.family_id}-${item.challenge_id}-${index}`}
+        ListHeaderComponent={renderLogsListHeader}
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadActivityLogs}
+            tintColor={Colors.purple[1]}
+            colors={[Colors.purple[1]]}
+            progressBackgroundColor={Colors.white}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📋</Text>
+            <ThemedText style={styles.emptyText}>
+              {t('activity.noActivity')}
+            </ThemedText>
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+      />
       <FamilyBreakdownModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         family={selectedFamily}
       />
-    </View>
+    </ScrollView >
   );
 }
 
@@ -477,5 +577,117 @@ const styles = StyleSheet.create({
     fontSize: Font.sizes.body,
     color: Colors.light.textSecondary,
     textAlign: 'center',
+  } as TextStyle,
+
+  headerContainer: {
+    padding: Spacing.md,
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.purple[2],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  } as ViewStyle,
+  headerTitle: {
+    fontSize: Font.sizes.h1,
+    fontWeight: "700",
+    color: Colors.white,
+    marginBottom: Spacing.xs,
+  } as TextStyle,
+  headerSubtitle: {
+    fontSize: Font.sizes.body,
+    color: Colors.orange[0],
+  } as TextStyle,
+
+  activityItem: {
+    flexDirection: "row",
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+    shadowColor: Colors.light.cardShadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  } as ViewStyle,
+
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.purple[0],
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.md,
+  } as ViewStyle,
+
+  sourceIcon: {
+    fontSize: 20,
+  } as TextStyle,
+  activityContent: {
+    flex: 1,
+  } as ViewStyle,
+
+  activityHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  } as ViewStyle,
+  pointsBadge: {
+    backgroundColor: Colors.green[0],
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.small,
+  } as ViewStyle,
+  pointsText: {
+    fontSize: Font.sizes.caption,
+    fontWeight: "700",
+    color: Colors.green[2],
+  } as TextStyle,
+  challengeTitle: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textPrimary,
+    marginBottom: Spacing.sm,
+    lineHeight: 20,
+  } as TextStyle,
+
+  activityFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  } as ViewStyle,
+
+  submittedBy: {
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    flex: 1,
+  } as TextStyle,
+
+  timeAgo: {
+    fontSize: Font.sizes.caption,
+    color: Colors.light.textSecondary,
+    fontWeight: "500",
+  } as TextStyle,
+  weekBadge: {
+    // alignSelf: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: "space-between",
+    // width: '100%'
+  } as ViewStyle,
+  weekText: {
+    fontSize: Font.sizes.caption,
+    color: Colors.purple[2],
+    backgroundColor: Colors.purple[0],
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.small,
+    fontWeight: "600",
+  } as TextStyle,
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: Spacing.md,
   } as TextStyle,
 });
