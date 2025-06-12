@@ -9,7 +9,13 @@
     "editScore": "Edit Score",
     "success": "Success!",
     "scoreUpdated": "Your score has been updated.",
-    "updateFailed": "Could not update score."
+    "updateFailed": "Could not update score.",
+    "deleteScore": {
+      "title": "Delete Score",
+      "message": "Are you sure you want to delete this score? This action cannot be undone."
+    },
+    "scoreDeleted": "Score deleted successfully",
+    "deleteFailed": "Failed to delete score"
   },
   "common": {
     "welcome": "Welcome",
@@ -21,7 +27,8 @@
     "restartTitle": "Restart Required",
     "restartMessage": "The app needs to restart to apply the new layout direction.",
     "error": "Error",
-    "retry": "Retry"
+    "retry": "Retry",
+    "delete": "Delete"
   },
   "tabs": {
     "overview": "Overview",

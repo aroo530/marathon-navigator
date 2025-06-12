@@ -1,6 +1,7 @@
 // app/(tabs)/marathon/challenges.tsx
 import { useTranslation } from 'react-i18next';
 
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { Header } from "@/components/Header";
 import ScoreInputModal from "@/components/ScoreInputModal";
 import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
@@ -10,6 +11,7 @@ import { useMarathon } from "@/context/MarathonContext";
 import {
   type Challenge,
   type ChallengeWithProgress,
+  deleteChallengeScore,
   fetchMarathonChallenges,
   updateChallengeScore
 } from '@/services/challenges';
@@ -48,6 +50,8 @@ export default function ChallengesScreen() {
   const [generalChallenges, setGeneralChallenges] = useState<ChallengeWithProgress[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [challengeToDelete, setChallengeToDelete] = useState<Challenge | null>(null);
 
   const showToast = (type: 'success' | 'error', title: string, message: string) => {
     Toast.show({
@@ -182,6 +186,31 @@ export default function ChallengesScreen() {
     }
   };
 
+  const handleDeletePress = (challenge: Challenge) => {
+    setChallengeToDelete(challenge);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!currentFamily || !challengeToDelete) return;
+    try {
+      await deleteChallengeScore(
+        currentFamily.id,
+        challengeToDelete.week_challenge_id,
+        challengeToDelete.id
+      );
+      showToast('success', t('challenges.success'), t('challenges.scoreDeleted'));
+      fetchChallenges();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete score';
+      showToast('error', t('common.error'), t('challenges.deleteFailed'));
+      setError(message);
+    } finally {
+      setDeleteModalVisible(false);
+      setChallengeToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -249,9 +278,8 @@ export default function ChallengesScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
               {section.data.map((challenge) => (
-                <View key={challenge.id}>{/* renderChallengeCard */}
+                <View key={challenge.id}>
                   <View style={styles.challengeCard}>
-                    {/* ...same as before... */}
                     <View style={styles.challengeHeader}>
                       <Text style={styles.challengeTitle}>{challenge.title}</Text>
                       <View style={styles.pointsBadge}>
@@ -270,16 +298,28 @@ export default function ChallengesScreen() {
                           {challenge.is_general ? t('challenges.general') : t('challenges.weekly')}
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        style={styles.statusButton}
-                        onPress={() => handleChallengePress(challenge)}
-                      >
-                        <Text style={styles.statusButtonText}>
-                          {challenge.points_awarded
-                            ? t('challenges.editScore')   // new translation key “Edit Score”
-                            : t('challenges.markComplete')}
-                        </Text>
-                      </TouchableOpacity>
+                      <View style={styles.actionButtons}>
+                        {challenge.points_awarded && (
+                          <TouchableOpacity
+                            style={[styles.statusButton, styles.deleteButton]}
+                            onPress={() => handleDeletePress(challenge)}
+                          >
+                            <Text style={styles.deleteButtonText}>
+                              {t('common.delete')}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          style={styles.statusButton}
+                          onPress={() => handleChallengePress(challenge)}
+                        >
+                          <Text style={styles.statusButtonText}>
+                            {challenge.points_awarded
+                              ? t('challenges.editScore')
+                              : t('challenges.markComplete')}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -300,7 +340,17 @@ export default function ChallengesScreen() {
             onSubmit={handleScoreSubmit}
           />
         )}
-      </SafeAreaView >
+
+        <DeleteConfirmationModal
+          visible={deleteModalVisible}
+          challengeTitle={challengeToDelete?.title ?? ''}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => {
+            setDeleteModalVisible(false);
+            setChallengeToDelete(null);
+          }}
+        />
+      </SafeAreaView>
     </>
   );
 }
@@ -459,5 +509,17 @@ const styles = StyleSheet.create({
   },
   selectedWeekText: {
     color: Colors.white,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  deleteButton: {
+    backgroundColor: Colors.red[1],
+  },
+  deleteButtonText: {
+    color: Colors.white,
+    fontSize: Font.sizes.caption,
+    fontWeight: '600',
   },
 });

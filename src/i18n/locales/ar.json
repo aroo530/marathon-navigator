@@ -9,7 +9,13 @@
     "success": "تمام",
     "scoreUpdated": "تم تحديث السكور بنجاح!",
     "updateFailed": "فشل في تحديث التحدي",
-    "editScore": "عدل السكور"
+    "editScore": "عدل السكور",
+    "deleteScore": {
+      "title": "امسح السكور",
+      "message": "متأكد انك هتمسح السكور؟ مش هنعرف نرجعه تاني"
+    },
+    "scoreDeleted": "Score deleted successfully",
+    "deleteFailed": "Failed to delete score"
   },
   "common": {
     "welcome": "أهلاً",

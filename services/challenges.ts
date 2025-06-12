@@ -471,3 +471,22 @@ export const getExistingScore = async (
         notes: data.notes || undefined
     };
 };
+
+export const deleteChallengeScore = async (
+    familyId: number,
+    weekChallengeId?: number,
+    challengeId?: number,
+): Promise<void> => {
+    const { error } = await supabase
+        .from('family_scores')
+        .delete()
+        .match({
+            family_id: familyId,
+            week_challenge_id: weekChallengeId, // or null
+            challenge_id: challengeId,
+        })
+    if (error) {
+        console.error('Error deleting challenge score:', error);
+        throw error;
+    }
+};
