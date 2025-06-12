@@ -37,7 +37,7 @@ import {
 
 const ROLE_PARTICIPANT = 'participant' as const;
 
-type ModalMode = 'create' | 'edit' | null;
+type ModalMode = 'create' | 'edit' | 'delete' | null;
 
 export default function ParticipantsScreen() {
     const { t } = useTranslation();
@@ -57,6 +57,18 @@ export default function ParticipantsScreen() {
     const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
     const [formData, setFormData] = useState({ name: '' });
     const [submitting, setSubmitting] = useState(false);
+
+    const [confirmationModal, setConfirmationModal] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+    });
 
     const fetchParticipants = useCallback(async () => {
         if (!currentFamily?.id) return;
@@ -176,9 +188,11 @@ export default function ParticipantsScreen() {
             return;
         }
 
-        // For web, we'll use a simple confirm dialog
-        if (window.confirm(t('users.deleteConfirmation', { name: p.full_name }))) {
-            (async () => {
+        setConfirmationModal({
+            visible: true,
+            title: t('users.deleteParticipant'),
+            message: t('users.deleteConfirmation', { name: p.full_name }),
+            onConfirm: async () => {
                 try {
                     await deleteParticipant(p.id);
                     showToast('success', t('users.participantDeleted'));
@@ -186,9 +200,11 @@ export default function ParticipantsScreen() {
                 } catch (error) {
                     console.error('Error deleting participant:', error);
                     showToast('error', t('users.errorDeletingParticipant'));
+                } finally {
+                    setConfirmationModal(prev => ({ ...prev, visible: false }));
                 }
-            })();
-        }
+            },
+        });
     };
 
     const renderParticipant = ({ item }: { item: Participant }) => {
@@ -257,7 +273,7 @@ export default function ParticipantsScreen() {
                 <Ionicons name="add" size={24} color="#fff" />
             </TouchableOpacity>
 
-            {/* Modal */}
+            {/* Edit/Create Modal */}
             <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeModal}>
                 <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
                     <SafeAreaView style={styles.modal}>
@@ -268,8 +284,8 @@ export default function ParticipantsScreen() {
                             <Text style={styles.modalTitle}>
                                 {modalMode === 'create' ? t('users.addParticipant') : t('users.editParticipant')}
                             </Text>
-                            <TouchableOpacity
-                                onPress={handleSubmit}
+                            <TouchableOpacity 
+                                onPress={handleSubmit} 
                                 disabled={submitting}
                                 style={[styles.modalButton, styles.modalSaveButton]}
                             >
@@ -295,6 +311,35 @@ export default function ParticipantsScreen() {
                         </View>
                     </SafeAreaView>
                 </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Confirmation Modal */}
+            <Modal
+                visible={confirmationModal.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setConfirmationModal(prev => ({ ...prev, visible: false }))}
+            >
+                <View style={styles.confirmationOverlay}>
+                    <View style={styles.confirmationModal}>
+                        <Text style={styles.confirmationTitle}>{confirmationModal.title}</Text>
+                        <Text style={styles.confirmationMessage}>{confirmationModal.message}</Text>
+                        <View style={styles.confirmationActions}>
+                            <TouchableOpacity
+                                style={[styles.confirmationButton, styles.confirmationCancelButton]}
+                                onPress={() => setConfirmationModal(prev => ({ ...prev, visible: false }))}
+                            >
+                                <Text style={styles.confirmationCancelText}>{t('users.cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.confirmationButton, styles.confirmationConfirmButton]}
+                                onPress={confirmationModal.onConfirm}
+                            >
+                                <Text style={styles.confirmationConfirmText}>{t('users.delete')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
             </Modal>
         </SafeAreaView>
     );
@@ -468,4 +513,62 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingBottom: Spacing.lg,
     } as ViewStyle,
+    confirmationOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: Spacing.lg,
+    } as ViewStyle,
+    confirmationModal: {
+        backgroundColor: Colors.light.background,
+        borderRadius: BorderRadius.medium,
+        padding: Spacing.lg,
+        width: '100%',
+        maxWidth: 400,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    } as ViewStyle,
+    confirmationTitle: {
+        fontSize: Font.sizes.h2,
+        color: Colors.light.textPrimary,
+        marginBottom: Spacing.md,
+        textAlign: 'center',
+    } as TextStyle,
+    confirmationMessage: {
+        fontSize: Font.sizes.body,
+        color: Colors.light.textSecondary,
+        marginBottom: Spacing.lg,
+        textAlign: 'center',
+    } as TextStyle,
+    confirmationActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: Spacing.md,
+    } as ViewStyle,
+    confirmationButton: {
+        flex: 1,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.medium,
+        alignItems: 'center',
+    } as ViewStyle,
+    confirmationCancelButton: {
+        backgroundColor: Colors.light.cardBackground,
+        borderWidth: 1,
+        borderColor: Colors.light.cardBorder,
+    } as ViewStyle,
+    confirmationConfirmButton: {
+        backgroundColor: Colors.red[1],
+    } as ViewStyle,
+    confirmationCancelText: {
+        color: Colors.light.textPrimary,
+        fontSize: Font.sizes.body,
+    } as TextStyle,
+    confirmationConfirmText: {
+        color: '#fff',
+        fontSize: Font.sizes.body,
+    } as TextStyle,
 });
