@@ -1,16 +1,21 @@
 // app/(tabs)/marathon/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
+import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
-import Toast from "react-native-toast-message";
+import Toast from 'react-native-toast-message';
+
+const Tab = createMaterialBottomTabNavigator();
+
 export default function MarathonLayout() {
   const { t } = useTranslation();
 
   return (
     <PaperProvider>
       <Tabs screenOptions={{
+        animation: 'shift',
         headerShown: false, tabBarStyle: {
           // paddingBottom: 8,   // ← add bottom padding here
           height: 60,         // ← you can tweak the height if needed
