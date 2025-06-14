@@ -1,13 +1,10 @@
 // app/(tabs)/marathon/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
-
-const Tab = createMaterialBottomTabNavigator();
 
 export default function MarathonLayout() {
   const { t } = useTranslation();
