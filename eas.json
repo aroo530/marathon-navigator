@@ -13,6 +13,7 @@
     },
     "production": {
       "android": {
+        "buildType": "apk",
         "env": {
           "ANDROID_SDK_ROOT": "/Users/arsanymilad/Library/Android/sdk"
         }
