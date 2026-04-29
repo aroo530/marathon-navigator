@@ -1,50 +1,117 @@
-# Welcome to your Expo app 👋
+# Marathon Navigator 🏃
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Marathon Navigator is a mobile app for managing and participating in family-based marathon competitions. Families compete in challenges, tournaments, games, and activities to earn points and climb the leaderboard.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Marathon Management** - Browse and select from multiple ongoing marathons with detailed information
+- **Leaderboard** - Real-time family rankings with total scores across all challenges
+- **Challenges** - Weekly and general challenges with various types (Kahoot, projects, attendance, activities, games, tournaments)
+- **Tournament Bracket** - Compete in tournament-style matchups with automatic point awards
+- **Games & Activities** - Participate in various game types to earn points
+- **Participant Tracking** - View all participating families and members
+- **Multi-language Support** - Built-in i18n support for internationalization
+- **Secure Authentication** - User authentication and family management via Supabase
+- **Real-time Data Sync** - AsyncStorage for offline support and state persistence
 
+## Tech Stack
+
+- **Frontend**: React Native with Expo
+- **Navigation**: Expo Router with tab-based navigation
+- **State Management**: React Context API
+- **Backend**: Supabase (PostgreSQL)
+- **UI Components**: React Native Paper
+- **Styling**: React Native StyleSheet
+- **Internationalization**: i18next
+- **Icons**: Expo Vector Icons
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm or yarn
+- Expo CLI: `npm install -g eas-cli`
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/aroo530/marathon-navigator.git
+   cd marathon-navigator
+   ```
+
+2. Install dependencies
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. Start the app
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. Open the app in:
+   - **Development build**: Follow [Expo development builds guide](https://docs.expo.dev/develop/development-builds/introduction/)
+   - **Android emulator**: `a` in Expo CLI
+   - **iOS simulator**: `i` in Expo CLI
+   - **Expo Go**: Scan the QR code with [Expo Go app](https://expo.dev/go)
+   - **Web**: `w` in Expo CLI
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+├── app/                     # Expo Router screens
+│   └── (tabs)/             # Tab navigation layout
+│       └── [marathonId]/   # Dynamic marathon routes
+├── components/             # Reusable React components
+├── context/                # React Context providers
+│   ├── AuthContext.tsx
+│   ├── FamilyContext.tsx
+│   └── MarathonContext.tsx
+├── services/               # API services (Supabase)
+│   ├── marathonService.ts
+│   ├── leaderboard.ts
+│   ├── tournamentService.ts
+│   └── challenges.ts
+├── constants/              # App configuration
+├── assets/                 # Images and static files
+└── DDL.SQL                 # Database schema
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Key Screens
 
-## Learn more
+- **Leaderboard** - Track family rankings and scores
+- **Challenges** - Weekly challenges with progress tracking
+- **Tournament** - Bracket-style competitions between families
+- **Games** - Interactive games and activities
+- **Participants** - List of all participating families
 
-To learn more about developing your project with Expo, look at the following resources:
+## Scripts
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm start          # Start the app in development mode
+npm run android    # Build and run on Android
+npm run ios        # Build and run on iOS
+npm run web        # Run web version
+npm run lint       # Run ESLint
+npm run reset-project  # Reset to fresh state
+```
 
-## Join the community
+## Environment Setup
 
-Join our community of developers creating universal apps.
+This project requires Supabase configuration. Set up your `.env` file with your Supabase credentials.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Learn More
+
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Supabase Documentation](https://supabase.com/docs)
+
+## Contributing
+
+Contributions are welcome! Feel free to submit issues and pull requests.
+
+## License
+
+This project is private.
