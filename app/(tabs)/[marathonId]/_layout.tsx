@@ -40,15 +40,17 @@ export default function MarathonLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="tournament"
-          options={{
-            title: t('tabs.tournament'),
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="medal" size={size} color={color} />
-            ),
-          }}
-        />
+        {selectedMarathon?.show_tournament !== false && (
+          <Tabs.Screen
+            name="tournament"
+            options={{
+              title: t('tabs.tournament'),
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="medal" size={size} color={color} />
+              ),
+            }}
+          />
+        )}
         {selectedMarathon?.show_games !== false && (
           <Tabs.Screen
             name="games"

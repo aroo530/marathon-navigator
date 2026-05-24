@@ -66,6 +66,7 @@ CREATE TABLE public.marathons (
   picture_url text DEFAULT 'https://qwnkzzsbnfqsjtiqabre.supabase.co/storage/v1/object/public/marathon/marathon_logos/default_marathon_logo.png'::text,
   status character varying DEFAULT 'upcoming'::character varying CHECK (status::text = ANY (ARRAY['upcoming'::character varying, 'active'::character varying, 'completed'::character varying]::text[])),
   show_games boolean NOT NULL DEFAULT true,
+  show_tournament boolean NOT NULL DEFAULT true,
   show_family_picker boolean NOT NULL DEFAULT false,
   CONSTRAINT marathons_pkey PRIMARY KEY (id)
 );

@@ -13,6 +13,7 @@ export type Marathon = {
   week_count: number;
   status: string;
   show_games: boolean;
+  show_tournament: boolean;
   show_family_picker: boolean;
 };
 
