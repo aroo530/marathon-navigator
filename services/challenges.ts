@@ -5,7 +5,7 @@ export type Challenge = {
     marathon_id: number;
     title: string;
     description: string;
-    challenge_type: 'kahoot' | 'project' | 'attendance' | 'activity' | 'game' | 'tournament';
+    challenge_type: 'kahoot' | 'project' | 'attendance' | 'activity' | 'game' | 'tournament' | 'confession';
     game_type: string | null;
     points: number;
     is_general: boolean;

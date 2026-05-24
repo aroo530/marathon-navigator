@@ -32,6 +32,28 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+const CHALLENGE_TYPE_CONFIG: Record<string, { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }> = {
+  kahoot:     { icon: 'help-circle-outline',  label: 'Brain Storm' },
+  project:    { icon: 'construct-outline',    label: 'Project' },
+  attendance: { icon: 'calendar-outline',     label: 'Attendance' },
+  activity:   { icon: 'star-outline',         label: 'Activity' },
+  game:       { icon: 'game-controller-outline', label: 'Game' },
+  tournament: { icon: 'trophy-outline',       label: 'Tournament' },
+  confession: { icon: 'heart-outline',        label: 'Confession' },
+};
+
+const GAME_TYPE_LABELS: Record<string, string> = {
+  mass:            'القداس',
+  memorization:    'المحفوظات',
+  one_heart:       'قلب واحد',
+  escape_room:     'Escape Room',
+  '3d_model':      'سلاح المهندسين',
+  video:           'المبدع الصغير',
+  problem_solving: 'ادارة الازمة',
+  doctrine:        'خط دفاع العقيدة',
+  book_summary:    'تلخيص الكتاب',
+};
+
 export default function ChallengesScreen() {
   const { t } = useTranslation();
 
@@ -290,12 +312,14 @@ export default function ChallengesScreen() {
                     <View style={styles.challengeFooter}>
                       <View style={styles.challengeType}>
                         <Ionicons
-                          name={challenge.is_general ? "infinite" : "calendar"}
+                          name={CHALLENGE_TYPE_CONFIG[challenge.challenge_type]?.icon ?? 'ellipse-outline'}
                           size={16}
                           color={Colors.light.textSecondary}
                         />
                         <Text style={styles.challengeTypeText}>
-                          {challenge.is_general ? t('challenges.general') : t('challenges.weekly')}
+                          {challenge.game_type && GAME_TYPE_LABELS[challenge.game_type]
+                            ? GAME_TYPE_LABELS[challenge.game_type]
+                            : (CHALLENGE_TYPE_CONFIG[challenge.challenge_type]?.label ?? challenge.challenge_type)}
                         </Text>
                       </View>
                       <View style={styles.actionButtons}>

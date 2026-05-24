@@ -12,6 +12,7 @@ export type Marathon = {
   family_count: number;
   week_count: number;
   status: string;
+  show_games: boolean;
 };
 
 type MarathonContextType = {

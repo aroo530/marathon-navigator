@@ -5,9 +5,11 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
+import { useMarathon } from '@/context/MarathonContext';
 
 export default function MarathonLayout() {
   const { t } = useTranslation();
+  const { selectedMarathon } = useMarathon();
 
   return (
     <PaperProvider>
@@ -47,15 +49,17 @@ export default function MarathonLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="games"
-          options={{
-            title: t('tabs.games'),
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="game-controller" size={size} color={color} />
-            ),
-          }}
-        />
+        {selectedMarathon?.show_games !== false && (
+          <Tabs.Screen
+            name="games"
+            options={{
+              title: t('tabs.games'),
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="game-controller" size={size} color={color} />
+              ),
+            }}
+          />
+        )}
         <Tabs.Screen
           name="participants"
           options={{

@@ -19,7 +19,7 @@ CREATE TABLE public.challenges (
   marathon_id integer,
   title character varying NOT NULL,
   description text,
-  challenge_type character varying NOT NULL CHECK (challenge_type::text = ANY (ARRAY['kahoot'::character varying, 'project'::character varying, 'attendance'::character varying, 'activity'::character varying, 'game'::character varying, 'tournament'::character varying]::text[])),
+  challenge_type character varying NOT NULL CHECK (challenge_type::text = ANY (ARRAY['kahoot'::character varying, 'project'::character varying, 'attendance'::character varying, 'activity'::character varying, 'game'::character varying, 'tournament'::character varying, 'confession'::character varying]::text[])),
   game_type character varying,
   points integer DEFAULT 100,
   is_general boolean DEFAULT false,
@@ -64,6 +64,8 @@ CREATE TABLE public.marathons (
   end_date date NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   picture_url text DEFAULT 'https://qwnkzzsbnfqsjtiqabre.supabase.co/storage/v1/object/public/marathon/marathon_logos/default_marathon_logo.png'::text,
+  status character varying DEFAULT 'upcoming'::character varying CHECK (status::text = ANY (ARRAY['upcoming'::character varying, 'active'::character varying, 'completed'::character varying]::text[])),
+  show_games boolean NOT NULL DEFAULT true,
   CONSTRAINT marathons_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.scoring_configs (
@@ -137,6 +139,7 @@ CREATE TABLE public.users (
   family_id integer,
   avatar_url text,
   created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_family_id_fkey FOREIGN KEY (family_id) REFERENCES public.families(id)
 );
