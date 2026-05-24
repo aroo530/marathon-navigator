@@ -62,7 +62,12 @@ function MarathonProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedMarathon = await AsyncStorage.getItem('selectedMarathon');
         if (storedMarathon) {
-          setSelectedMarathonState(JSON.parse(storedMarathon));
+          const parsed = JSON.parse(storedMarathon);
+          if (parsed?.status !== 'completed') {
+            setSelectedMarathonState(parsed);
+          } else {
+            await AsyncStorage.removeItem('selectedMarathon');
+          }
         }
       } catch (err) {
         console.error('Error loading stored marathon:', err);

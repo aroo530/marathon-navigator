@@ -3,7 +3,9 @@ import { supabase } from "../constants/supabaseClient";
 export const fetchAvailableMarathons = async () => {
   const { data, error } = await supabase
     .from("marathon_with_family_count")
-    .select("*");
+    .select("*")
+    .neq("status", "completed")
+    .order("id", { ascending: false });
 
   if (error) throw error;
 
