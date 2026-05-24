@@ -15,7 +15,6 @@ import {
   Image,
   ImageStyle,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextStyle,
@@ -90,26 +89,17 @@ export default function LeaderboardScreen() {
   const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
   const insets = useSafeAreaInsets();
 
-  const loadLeaderboardData = async () => {
-    setLoading(true);
-    const data = await getLeaderboardData(Number(currentMarathonId) || 0);
-    setLeaderboardData(data);
-    setLoading(false);
-  };
-
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadLeaderboardData();
-    }, [currentMarathonId])
-  );
-  const loadActivityLogs = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await getLeaderboardLogs(Number(currentMarathonId) || 0);
-      setActivityLogs(data);
+      const [data, logs] = await Promise.all([
+        getLeaderboardData(Number(currentMarathonId) || 0),
+        getLeaderboardLogs(Number(currentMarathonId) || 0),
+      ]);
+      setLeaderboardData(data);
+      setActivityLogs(logs);
     } catch (error) {
-      console.error('Error loading activity logs:', error);
+      console.error('Error loading leaderboard:', error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +107,7 @@ export default function LeaderboardScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadActivityLogs();
+      loadData();
     }, [currentMarathonId])
   );
   const handleFamilyPress = async (family: Family) => {
@@ -172,69 +162,44 @@ export default function LeaderboardScreen() {
     </TouchableOpacity>
   );
 
-  const renderListHeader = () => {
-    if (!leaderboardData.length) return null;
-
-    // const topThree = leaderboardData.slice(0, 3);
-
-    return (
-      <>
-        {/* <View style={styles.dateContainer}>
-          <ThemedText type="default" style={styles.dates}>
-            {format(new Date(selectedMarathon?.start_date || ''), 'MMM d')} - {format(new Date(selectedMarathon?.end_date || ''), 'MMM d, yyyy')}
-          </ThemedText>
-        </View> */}
-
-        {/* <View style={styles.podiumContainer}>
-          <TouchableOpacity
-            style={{ ...styles.podiumItem, height: 160 }}
-            onPress={() => handleFamilyPress(topThree[1])}
-          >
-            <PodiumItem
-              family={topThree[1]}
-              position={t('leaderboard.second')}
-              color={Colors.light.textSecondary}
-              height={140}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ ...styles.podiumItem, height: 180 }}
-            onPress={() => handleFamilyPress(topThree[0])}
-          >
-            <PodiumItem
-              family={topThree[0]}
-              position={t('leaderboard.first')}
-              color={Colors.yellow[1]}
-              height={160}
-            />
-          </TouchableOpacity >
-          <TouchableOpacity
-            style={{ ...styles.podiumItem, height: 140 }}
-            onPress={() => handleFamilyPress(topThree[2])}
-          >
-            <PodiumItem
-              family={topThree[2]}
-              position={t('leaderboard.third')}
-              color={Colors.orange[2]}
-              height={120}
-            />
-          </TouchableOpacity>
-        </View> */}
-
-        <View style={styles.tableHeader}>
-          <View style={styles.rankColumn}>
-            <Text style={styles.tableHeaderText}>{t('leaderboard.rank')}</Text>
+  const renderLeaderboardSection = () => (
+    <>
+      <View style={styles.leaderboardContainer}>
+        {leaderboardData.length > 0 ? (
+          <>
+            <View style={styles.tableHeader}>
+              <View style={styles.rankColumn}>
+                <Text style={styles.tableHeaderText}>{t('leaderboard.rank')}</Text>
+              </View>
+              <View style={styles.familyColumn}>
+                <Text style={styles.tableHeaderText}>{t('leaderboard.family')}</Text>
+              </View>
+              <View style={styles.pointsColumn}>
+                <Text style={styles.tableHeaderText}>{t('leaderboard.points')}</Text>
+              </View>
+            </View>
+            {leaderboardData.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {renderLeaderboardItem({ item, index })}
+              </React.Fragment>
+            ))}
+          </>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>{t('leaderboard.noData')}</ThemedText>
           </View>
-          <View style={styles.familyColumn}>
-            <Text style={styles.tableHeaderText}>{t('leaderboard.family')}</Text>
-          </View>
-          <View style={styles.pointsColumn}>
-            <Text style={styles.tableHeaderText}>{t('leaderboard.points')}</Text>
-          </View>
-        </View>
-      </>
-    );
-  };
+        )}
+      </View>
+      <View style={styles.headerContainer}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          {t('activity.recentActivity')}
+        </ThemedText>
+        <ThemedText type="default" style={styles.headerSubtitle}>
+          {t('activity.latestSubmissions')}
+        </ThemedText>
+      </View>
+    </>
+  );
 
   const renderActivityItem = ({ item }: { item: ActivityLog }) => (
     <View style={styles.activityItem}>
@@ -268,16 +233,6 @@ export default function LeaderboardScreen() {
     </View>
   );
 
-  const renderLogsListHeader = () => (
-    <View style={styles.headerContainer}>
-      <ThemedText type="title" style={styles.headerTitle}>
-        {t('activity.recentActivity')}
-      </ThemedText>
-      <ThemedText type="default" style={styles.headerSubtitle}>
-        {t('activity.latestSubmissions')}
-      </ThemedText>
-    </View>
-  );
   if (loading) {
     return (
       <View style={styles.container}>
@@ -294,44 +249,20 @@ export default function LeaderboardScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Header
         title={selectedMarathon?.title || t('leaderboard.title')}
-      // subtitle={selectedMarathon?.description}
       />
-      <FlatList
-        style={styles.leaderboardContainer}
-        data={leaderboardData}
-        renderItem={renderLeaderboardItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={renderListHeader}
-        contentContainerStyle={{ paddingBottom: insets.bottom }}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={loadLeaderboardData}
-            tintColor={Colors.purple[1]}
-            colors={[Colors.purple[1]]}
-            progressBackgroundColor={Colors.white}
-          />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>{t('leaderboard.noData')}</ThemedText>
-          </View>
-        }
-      />
-
       <FlatList
         data={activityLogs}
         renderItem={renderActivityItem}
         keyExtractor={(item, index) => `${item.family_id}-${item.challenge_id}-${index}`}
-        ListHeaderComponent={renderLogsListHeader}
+        ListHeaderComponent={renderLeaderboardSection}
         contentContainerStyle={{ paddingBottom: insets.bottom }}
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={loadActivityLogs}
+            onRefresh={loadData}
             tintColor={Colors.purple[1]}
             colors={[Colors.purple[1]]}
             progressBackgroundColor={Colors.white}
@@ -352,7 +283,7 @@ export default function LeaderboardScreen() {
         onClose={() => setModalVisible(false)}
         family={selectedFamily}
       />
-    </ScrollView >
+    </View>
   );
 }
 

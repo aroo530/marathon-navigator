@@ -16,13 +16,11 @@ const secureStorage = {
   removeItem: SecureStore.deleteItemAsync,
 };
 
-let auth: any = {
+const auth: Parameters<typeof createClient>[2]['auth'] = {
   autoRefreshToken: true,
   persistSession: true,
-}
-if (!isWeb) {
-  auth['storage'] = secureStorage;
-}
+  ...(isWeb ? {} : { storage: secureStorage }),
+};
 
 export const supabase = createClient(
   supabaseUrl,

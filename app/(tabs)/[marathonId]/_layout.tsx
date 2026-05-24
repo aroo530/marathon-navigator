@@ -48,7 +48,7 @@ export default function MarathonLayout() {
           }}
         />
         <Tabs.Screen
-          name="gemes"
+          name="games"
           options={{
             title: t('tabs.games'),
             tabBarIcon: ({ color, size }) => (

@@ -48,7 +48,15 @@
     "error": "Error",
     "fillAllFields": "Please fill in all fields",
     "noAccount": "Don't have an account?",
-    "signUp": "Sign Up"
+    "signUp": "Sign Up",
+    "createAccount": "Create Account",
+    "signUpToContinue": "Sign up to get started",
+    "confirmPassword": "Confirm Password",
+    "passwordMismatch": "Passwords do not match",
+    "creatingAccount": "Creating Account...",
+    "verifyEmail": "Please check your email for verification instructions",
+    "success": "Success",
+    "haveAccount": "Already have an account?"
   },
   "games": {
     "title": "Manage Games",

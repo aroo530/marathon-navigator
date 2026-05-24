@@ -1,12 +1,14 @@
-import { Colors } from '@/constants/Theme';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -14,6 +16,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 export default function SignUpScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,12 +25,12 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('auth.error'), t('auth.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('auth.error'), t('auth.passwordMismatch'));
       return;
     }
 
@@ -35,12 +38,12 @@ export default function SignUpScreen() {
       setIsLoading(true);
       await signUp(email, password);
       Alert.alert(
-        'Success',
-        'Please check your email for verification instructions',
+        t('auth.success'),
+        t('auth.verifyEmail'),
         [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
       );
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'An error occurred');
+      Alert.alert(t('auth.error'), error instanceof Error ? error.message : t('common.error'));
     } finally {
       setIsLoading(false);
     }
@@ -51,32 +54,35 @@ export default function SignUpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Sign up to get started</Text>
+      <ThemedView style={styles.content}>
+        <ThemedText type="title" style={styles.title}>{t('auth.createAccount')}</ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>{t('auth.signUpToContinue')}</ThemedText>
 
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            placeholderTextColor={Colors.light.textSecondary}
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            placeholderTextColor={Colors.light.textSecondary}
           />
           <TextInput
             style={styles.input}
-            placeholder="Confirm Password"
+            placeholder={t('auth.confirmPassword')}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
+            placeholderTextColor={Colors.light.textSecondary}
           />
 
           <TouchableOpacity
@@ -84,19 +90,21 @@ export default function SignUpScreen() {
             onPress={handleSignUp}
             disabled={isLoading}
           >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Creating Account...' : 'Sign Up'}
-            </Text>
+            <ThemedText type="defaultSemiBold" style={styles.buttonText}>
+              {isLoading ? t('auth.creatingAccount') : t('auth.signUp')}
+            </ThemedText>
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/(auth)" style={styles.link}>
-              <Text style={styles.linkText}>Sign In</Text>
+            <ThemedText type="default">{t('auth.haveAccount')}</ThemedText>
+            <Link href="/(auth)" asChild>
+              <TouchableOpacity>
+                <ThemedText type="defaultSemiBold" style={styles.linkText}>{t('auth.signIn')}</ThemedText>
+              </TouchableOpacity>
             </Link>
           </View>
         </View>
-      </View>
+      </ThemedView>
     </KeyboardAvoidingView>
   );
 }
@@ -108,57 +116,47 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: Spacing.lg,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: Colors.light.textPrimary,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
-    fontSize: 18,
-    color: Colors.light.textSecondary,
-    marginBottom: 32,
+    marginBottom: Spacing.xl,
   },
   form: {
-    gap: 16,
+    gap: Spacing.md,
   },
   input: {
-    backgroundColor: '#F5F5F5',
-    padding: 16,
-    borderRadius: 8,
-    fontSize: 16,
+    backgroundColor: Colors.light.cardBackground,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    fontSize: Font.sizes.body,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    color: Colors.light.textPrimary,
   },
   button: {
-    backgroundColor: Colors.blue[2],
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: Colors.purple[2],
+    padding: Spacing.md,
+    borderRadius: BorderRadius.medium,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.xs,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    color: Colors.white,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
-  },
-  footerText: {
-    color: Colors.light.textSecondary,
-  },
-  link: {
-    marginLeft: 4,
+    marginTop: Spacing.md,
   },
   linkText: {
-    color: Colors.blue[2],
-    fontWeight: '600',
+    color: Colors.purple[2],
+    marginLeft: Spacing.xs,
   },
-}); 
+});

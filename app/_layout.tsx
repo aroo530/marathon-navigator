@@ -1,20 +1,25 @@
 import AuthProvider from '@/context/AuthContext';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { I18nManager } from 'react-native';
-import i18n from '../src/i18n/i18n'; // your setup
+import i18n from '../src/i18n/i18n';
 
-
+function applyRTL(language: string) {
+  const isRTL = language === 'ar';
+  if (I18nManager.isRTL !== isRTL) {
+    I18nManager.allowRTL(isRTL);
+    I18nManager.forceRTL(isRTL);
+  }
+}
 
 export default function RootLayout() {
-  if (i18n.language === 'ar' && !I18nManager.isRTL) {
-    I18nManager.allowRTL(true);
-    I18nManager.forceRTL(true);
-  } else if (i18n.language === 'en' && I18nManager.isRTL) {
-    I18nManager.allowRTL(false);
-    I18nManager.forceRTL(false);
-  }
+  useEffect(() => {
+    applyRTL(i18n.language);
+    i18n.on('languageChanged', applyRTL);
+    return () => { i18n.off('languageChanged', applyRTL); };
+  }, []);
+
   return (
     <AuthProvider>
       <StatusBar style="auto" />

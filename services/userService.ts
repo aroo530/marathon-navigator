@@ -59,13 +59,12 @@ export async function createParticipant(
     .from('users')
     .insert([
       {
-        // email,
+        email,
         full_name: name,
         family_id: familyId,
         role: 'participant'
       }
-    ])
-    .single();
+    ]);
 
   if (error) {
     console.error('Error creating participant:', error.message);
@@ -81,8 +80,7 @@ export async function updateParticipant(
   const { error } = await supabase
     .from('users')
     .update(updates)
-    .eq('id', id)
-    .single();
+    .eq('id', id);
 
   if (error) {
     console.error('Error updating participant:', error.message);
@@ -94,11 +92,10 @@ export async function updateParticipant(
 export async function deleteParticipant(
   id: number
 ): Promise<void> {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('users')
     .delete()
-    .eq('id', id)
-    .single();
+    .eq('id', id);
 
   if (error) {
     console.error('Error deleting participant:', error.message);

@@ -108,11 +108,7 @@ export default function SignInScreen() {
                       text: 'OK',
                       onPress: () => {
                         // Reload the app to apply RTL
-                        if (Platform.OS === 'android') {
-                          RNRestart.Restart();
-                        } else {
-                          // For iOS: quit + reopen manually (or use expo-updates if configured)
-                        }
+                        RNRestart.Restart();
                       },
                     },
                   ]

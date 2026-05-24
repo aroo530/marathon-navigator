@@ -48,7 +48,15 @@
     "error": "فيه مشكلة",
     "fillAllFields": "محتاج تملى كل الخانات",
     "noAccount": "معندكش حساب؟",
-    "signUp": "سجّل حساب جديد"
+    "signUp": "سجّل حساب جديد",
+    "createAccount": "إنشاء حساب",
+    "signUpToContinue": "سجّل عشان تبدأ",
+    "confirmPassword": "تأكيد الباسورد",
+    "passwordMismatch": "الباسورد مش متطابق",
+    "creatingAccount": "بنعمل الحساب...",
+    "verifyEmail": "اتحقق من إيميلك عشان تكمل التسجيل",
+    "success": "تمام",
+    "haveAccount": "عندك حساب بالفعل؟"
   },
   "games": {
     "title": "إدارة الألعاب",
