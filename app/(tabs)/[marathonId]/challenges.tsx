@@ -11,8 +11,10 @@ import { useMarathon } from "@/context/MarathonContext";
 import {
   type Challenge,
   type ChallengeWithProgress,
+  type Family,
   deleteChallengeScore,
   fetchMarathonChallenges,
+  fetchMarathonFamilies,
   updateChallengeScore
 } from '@/services/challenges';
 import { getCurrentFamily } from '@/services/familyService';
@@ -63,6 +65,13 @@ export default function ChallengesScreen() {
   const { currentFamily, setCurrentFamily } = useFamily();
   const { userProfile } = useAuth();
 
+  const canPickFamily =
+    selectedMarathon?.show_family_picker === true &&
+    (userProfile?.role === 'admin' || userProfile?.role === 'leader');
+
+  const [allFamilies, setAllFamilies] = useState<Family[]>([]);
+  const [activeFamilyId, setActiveFamilyId] = useState<number | null>(null);
+
   const [weeks, setWeeks] = useState<{ id: number; week_number: number; start_date: string; end_date: string }[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
 
@@ -111,7 +120,7 @@ export default function ChallengesScreen() {
 
   // 2. Fetch challenges for selected week
   const fetchChallenges = async () => {
-    if (!currentFamily || selectedWeekId == null) return;
+    if (activeFamilyId == null || selectedWeekId == null) return;
     try {
       setLoading(true);
       setError(null);
@@ -119,7 +128,7 @@ export default function ChallengesScreen() {
       const { weekChallenges: weekly, generalChallenges: general } =
         await fetchMarathonChallenges(
           currentMarathonId,
-          currentFamily.id,
+          activeFamilyId,
           selectedWeekId
         );
 
@@ -138,32 +147,50 @@ export default function ChallengesScreen() {
     React.useCallback(() => {
       let isActive = true;
 
-      const fetchFamily = async () => {
-        if (!userProfile?.id || currentFamily) return;   // bail if we already have it
+      const init = async () => {
+        if (!userProfile?.id) return;
 
-        try {
-          const fam = await getCurrentFamily(currentMarathonId, userProfile.id);
-          if (isActive && fam) {
-            setCurrentFamily(fam);
+        // Resolve own family if not yet loaded
+        let fam = currentFamily;
+        if (!fam) {
+          try {
+            fam = await getCurrentFamily(currentMarathonId, userProfile.id);
+            if (isActive && fam) setCurrentFamily(fam);
+          } catch (err) {
+            console.error('fetch family failed:', err);
           }
-        } catch (err) {
-          console.error("fetch family failed:", err);
+        }
+
+        // If leader/admin with picker enabled, load all families
+        if (canPickFamily && currentMarathonId) {
+          try {
+            const families = await fetchMarathonFamilies(currentMarathonId);
+            if (isActive) {
+              setAllFamilies(families);
+              // Default to own family if found, else first in list
+              setActiveFamilyId(prev =>
+                prev ?? fam?.id ?? families[0]?.id ?? null
+              );
+            }
+          } catch (err) {
+            console.error('fetch all families failed:', err);
+          }
+        } else if (fam && isActive) {
+          setActiveFamilyId(fam.id);
         }
       };
 
-      fetchFamily();
+      init();
 
-      return () => {
-        isActive = false;  // prevents state updates if screen blurs before fetch finishes
-      };
-    }, [userProfile?.id, currentFamily])
+      return () => { isActive = false; };
+    }, [userProfile?.id, currentFamily, canPickFamily])
   );
 
   // inside your component:
   useFocusEffect(
     React.useCallback(() => {
       // 1) whenever we focus and have marathon+family, load weeks
-      if (currentMarathonId && currentFamily) {
+      if (currentMarathonId && activeFamilyId) {
         loadWeeks();
       }
       // optional cleanup:
@@ -176,11 +203,11 @@ export default function ChallengesScreen() {
   useFocusEffect(
     React.useCallback(() => {
       // 2) after weeks have loaded (selectedWeekId set), fetch challenges
-      if (selectedWeekId != null && currentFamily) {
+      if (selectedWeekId != null && activeFamilyId != null) {
         fetchChallenges();
       }
       return () => { };
-    }, [selectedWeekId, currentFamily])
+    }, [selectedWeekId, activeFamilyId])
   );
   const handleChallengePress = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
@@ -188,10 +215,10 @@ export default function ChallengesScreen() {
   };
 
   const handleScoreSubmit = async (points: number, percentage?: number) => {
-    if (!currentFamily || !selectedChallenge) return;
+    if (activeFamilyId == null || !selectedChallenge) return;
     try {
       await updateChallengeScore(
-        currentFamily.id,
+        activeFamilyId,
         points,
         percentage,
         selectedChallenge.week_challenge_id,
@@ -214,10 +241,10 @@ export default function ChallengesScreen() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!currentFamily || !challengeToDelete) return;
+    if (activeFamilyId == null || !challengeToDelete) return;
     try {
       await deleteChallengeScore(
-        currentFamily.id,
+        activeFamilyId,
         challengeToDelete.week_challenge_id,
         challengeToDelete.id
       );
@@ -262,6 +289,33 @@ export default function ChallengesScreen() {
     <>
       <Header title={t('challenges.title')} />
       <SafeAreaView style={styles.safeArea}>
+        {/* Family picker — visible to admin/leader when marathon has it enabled */}
+        {canPickFamily && allFamilies.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.familyPickerContainer}
+            contentContainerStyle={styles.familyPicker}
+          >
+            {allFamilies.map(family => (
+              <TouchableOpacity
+                key={family.id}
+                style={[
+                  styles.familyButton,
+                  activeFamilyId === family.id && styles.selectedFamilyButton,
+                ]}
+                onPress={() => setActiveFamilyId(family.id)}
+              >
+                <Text style={[
+                  styles.familyButtonText,
+                  activeFamilyId === family.id && styles.selectedFamilyText,
+                ]}>
+                  {family.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
         {/* Week selector */}
         <ScrollView
           horizontal
@@ -357,7 +411,11 @@ export default function ChallengesScreen() {
           <ScoreInputModal
             visible={modalVisible}
             challenge={selectedChallenge}
-            totalFamilyMembers={currentFamily?.member_count ?? 1}
+            totalFamilyMembers={
+              canPickFamily
+                ? (allFamilies.find(f => f.id === activeFamilyId) as any)?.member_count ?? currentFamily?.member_count ?? 1
+                : currentFamily?.member_count ?? 1
+            }
             initialPoints={selectedChallenge.points_awarded ?? 0}
             initialPercentage={selectedChallenge.percentage_score ?? 0}
             onClose={() => setModalVisible(false)}
@@ -499,6 +557,39 @@ const styles = StyleSheet.create({
     color: Colors.teal[3],
     fontSize: Font.sizes.caption,
     fontWeight: '600',
+  },
+  familyPickerContainer: {
+    width: '100%',
+    flexGrow: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+    backgroundColor: Colors.light.background,
+  },
+  familyPicker: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  familyButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.large,
+    backgroundColor: Colors.teal[0],
+    borderWidth: 1,
+    borderColor: Colors.teal[1],
+  },
+  selectedFamilyButton: {
+    backgroundColor: Colors.teal[2],
+    borderColor: Colors.teal[2],
+  },
+  familyButtonText: {
+    fontSize: Font.sizes.caption,
+    fontWeight: '600',
+    color: Colors.teal[3],
+  },
+  selectedFamilyText: {
+    color: Colors.white,
   },
   weekSelectorContainer: {
     width: '100%',
