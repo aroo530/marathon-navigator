@@ -6,19 +6,23 @@ import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import { useMarathon } from '@/context/MarathonContext';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 
 export default function MarathonLayout() {
   const { t } = useTranslation();
   const { selectedMarathon } = useMarathon();
+  const marathonTheme = useMarathonTheme();
 
   return (
     <PaperProvider>
       <Tabs screenOptions={{
         animation: 'shift',
-        headerShown: false, tabBarStyle: {
-          // paddingBottom: 8,   // ← add bottom padding here
-          height: 60,         // ← you can tweak the height if needed
-          alignContent: 'center'
+        headerShown: false,
+        tabBarActiveTintColor: marathonTheme.primary,
+        tabBarInactiveTintColor: marathonTheme.shade,
+        tabBarStyle: {
+          height: 60,
+          alignContent: 'center',
         },
       }}>
         <Tabs.Screen
@@ -40,34 +44,41 @@ export default function MarathonLayout() {
             ),
           }}
         />
-        {selectedMarathon?.show_tournament !== false && (
-          <Tabs.Screen
-            name="tournament"
-            options={{
-              title: t('tabs.tournament'),
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="medal" size={size} color={color} />
-              ),
-            }}
-          />
-        )}
-        {selectedMarathon?.show_games !== false && (
-          <Tabs.Screen
-            name="games"
-            options={{
-              title: t('tabs.games'),
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="game-controller" size={size} color={color} />
-              ),
-            }}
-          />
-        )}
+        <Tabs.Screen
+          name="tournament"
+          options={{
+            href: selectedMarathon?.show_tournament === false ? null : undefined,
+            title: t('tabs.tournament'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="medal" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="games"
+          options={{
+            href: selectedMarathon?.show_games === false ? null : undefined,
+            title: t('tabs.games'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="game-controller" size={size} color={color} />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="participants"
           options={{
             title: t('tabs.participants'),
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="people" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="attendance"
+          options={{
+            title: t('tabs.attendance'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="qr-code" size={size} color={color} />
             ),
           }}
         />

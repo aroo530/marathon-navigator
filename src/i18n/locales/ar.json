@@ -16,7 +16,11 @@
       "message": "متأكد انك هتمسح السكور؟ مش هنعرف نرجعه تاني"
     },
     "scoreDeleted": "تم مسح السكور",
-    "deleteFailed": "فشل في مسح السكور"
+    "deleteFailed": "فشل في مسح السكور",
+    "noChallenges": "مفيش تحديات للأسبوع ده",
+    "locked": "مقفول",
+    "lockedTitle": "التحدي مقفول",
+    "lockedMessage": "التحدي ده بيتولاه {{owner}}"
   },
   "common": {
     "welcome": "أهلاً",
@@ -36,7 +40,8 @@
     "challenges": "التحديات",
     "tournament": "الدوري",
     "games": "الألعاب",
-    "participants": "المشاركين"
+    "participants": "المشاركين",
+    "attendance": "الحضور"
   },
   "auth": {
     "welcomeBack": "يا اهلا يا اهلا!",
@@ -169,6 +174,31 @@
     "daysAgo": "{{days}} يوم فاتوا",
     "hoursAgo": "{{hours}} ساعة فاتوا",
     "justNow": "دلوقتي"
+  },
+  "attendance": {
+    "title": "الحضور",
+    "presentLabel": "حاضر",
+    "startScanning": "ابدأ المسح",
+    "done": "تم",
+    "scanHint": "صوّب الكاميرا على رمز QR للمشارك",
+    "selectFamily": "اختر عائلة",
+    "attendees": "الحاضرون",
+    "total": "الكل",
+    "scanned": "تم مسحهم",
+    "noAttendees": "مفيش حضور متسجل لسه. اضغط ابدأ المسح للبداية.",
+    "remove": "إزالة",
+    "removeTitle": "إزالة الحضور",
+    "removeConfirm": "إزالة حضور {{name}}؟",
+    "removeFailed": "فشل في إزالة الحضور",
+    "scanFeedback": {
+      "queued": "✓ مقبول",
+      "alreadyScanned": "تم مسحه في هذه الجلسة",
+      "recorded": "✓ {{name}} — تم التسجيل",
+      "duplicate": "{{name}} — مسجل مسبقاً",
+      "invalidQR": "رمز QR غير صالح",
+      "noFamily": "المشارك مش منسوب لعيلة",
+      "notFound": "المشارك مش موجود"
+    }
   },
   "users": {
     "participants": "المشاركون",
