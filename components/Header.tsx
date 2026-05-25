@@ -1,4 +1,5 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,7 @@ export function Header({
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const marathonTheme = useMarathonTheme();
   const navigation = useNavigation<NavigationProp<Record<string, object | undefined>>>();
 
   const handleBack = () => {
@@ -41,7 +43,7 @@ export function Header({
     <View
       style={[
         styles.header,
-        { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right },
+        { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: marathonTheme.primary },
       ]}
     >
       <View style={styles.container}>

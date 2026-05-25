@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import { Challenge, canUserEditChallenge } from '@/services/challenges';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,7 @@ export default function ScoreInputModal({
 }: Props) {
   const { t } = useTranslation();
   const { userProfile } = useAuth();
+  const marathonTheme = useMarathonTheme();
   const [completedMembers, setCompletedMembers] = useState('');
   const [manualPoints, setManualPoints] = useState('');
   const [loading, setLoading] = useState(false);
@@ -115,7 +117,7 @@ export default function ScoreInputModal({
           <ThemedText type="subtitle" style={styles.challengeTitle}>{challenge.title}</ThemedText>
 
           {loading ? (
-            <ActivityIndicator size="large" color={Colors.blue[2]} />
+            <ActivityIndicator size="large" color={marathonTheme.primary} />
           ) : challenge.uses_percentage_based_scoring ? (
             <>
               <ThemedText type="defaultSemiBold" style={styles.label}>
@@ -152,7 +154,7 @@ export default function ScoreInputModal({
               <ThemedText type="defaultSemiBold" style={styles.cancelButtonText}>{t('common.cancel', 'Cancel')}</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.buttonDisabled]}
+              style={[styles.submitButton, { backgroundColor: marathonTheme.primary }, loading && styles.buttonDisabled]}
               onPress={handleSubmit}
               disabled={loading}
             >

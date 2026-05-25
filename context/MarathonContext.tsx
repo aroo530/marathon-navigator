@@ -15,6 +15,7 @@ export type Marathon = {
   show_games: boolean;
   show_tournament: boolean;
   show_family_picker: boolean;
+  accent_color: string | null;
 };
 
 type MarathonContextType = {
@@ -60,12 +61,14 @@ function MarathonProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function initialize() {
+      let storedId: number | null = null;
       try {
         const storedMarathon = await AsyncStorage.getItem('selectedMarathon');
         if (storedMarathon) {
           const parsed = JSON.parse(storedMarathon);
           if (parsed?.status !== 'completed') {
             setSelectedMarathonState(parsed);
+            storedId = parsed?.id ?? null;
           } else {
             await AsyncStorage.removeItem('selectedMarathon');
           }
@@ -73,7 +76,27 @@ function MarathonProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error('Error loading stored marathon:', err);
       }
-      refreshMarathons();
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchAvailableMarathons();
+        if (data) {
+          setMarathons(data);
+          // Re-hydrate selected marathon with fresh DB data so new fields (e.g. accent_color) are picked up
+          if (storedId !== null) {
+            const fresh = data.find((m) => m.id === storedId);
+            if (fresh) {
+              setSelectedMarathonState(fresh);
+              await AsyncStorage.setItem('selectedMarathon', JSON.stringify(fresh));
+            }
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch marathons');
+      } finally {
+        setLoading(false);
+      }
     }
     initialize();
   }, []);

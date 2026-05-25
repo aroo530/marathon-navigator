@@ -26,7 +26,9 @@ import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { useFamily } from '@/context/FamilyContext';
 import { useMarathon } from '@/context/MarathonContext';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import { getCurrentFamily } from '@/services/familyService';
+import { fetchMarathonFamilies, type Family } from '@/services/challenges';
 import {
     Participant,
     createParticipant,
@@ -34,8 +36,6 @@ import {
     fetchParticipantsByFamilyId,
     updateParticipant,
 } from '@/services/userService';
-
-const ROLE_PARTICIPANT = 'participant' as const;
 
 type ModalMode = 'create' | 'edit' | 'delete' | null;
 
@@ -45,11 +45,20 @@ export default function ParticipantsScreen() {
     const { selectedMarathon } = useMarathon();
     const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
 
+    const marathonTheme = useMarathonTheme();
     const { userProfile } = useAuth();
     const { currentFamily, setCurrentFamily } = useFamily();
 
+    const canPickFamily =
+        selectedMarathon?.show_family_picker === true &&
+        (userProfile?.role === 'admin' || userProfile?.role === 'leader');
+
+    const [allFamilies, setAllFamilies] = useState<Family[]>([]);
+    const [activeFamilyId, setActiveFamilyId] = useState<number | null>(null);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
     const [participants, setParticipants] = useState<Participant[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -70,11 +79,10 @@ export default function ParticipantsScreen() {
         onConfirm: () => {},
     });
 
-    const fetchParticipants = useCallback(async () => {
-        if (!currentFamily?.id) return;
+    const fetchParticipants = useCallback(async (familyId: number) => {
         try {
             setLoading(true);
-            const list = await fetchParticipantsByFamilyId(currentFamily.id);
+            const list = await fetchParticipantsByFamilyId(familyId);
             setParticipants(list);
         } catch (error) {
             console.error('Error fetching participants:', error);
@@ -82,49 +90,60 @@ export default function ParticipantsScreen() {
         } finally {
             setLoading(false);
         }
-    }, [currentFamily?.id, t]);
+    }, [t]);
 
-    // Fetch current family and participants when screen focuses
     useFocusEffect(
         useCallback(() => {
             let active = true;
 
-            async function loadAll() {
-                // 1) Ensure we have family
-                if (userProfile?.id && !currentFamily) {
+            async function init() {
+                if (!userProfile?.id) return;
+
+                let fam = currentFamily;
+                if (!fam) {
                     try {
-                        const fam = await getCurrentFamily(currentMarathonId, userProfile.id);
+                        fam = await getCurrentFamily(currentMarathonId, userProfile.id);
                         if (active && fam) setCurrentFamily(fam);
                     } catch (e) {
                         console.error('Failed to load family', e);
                     }
                 }
-                // 2) Then load participants
-                if (currentFamily) {
-                    await fetchParticipants();
+
+                if (canPickFamily && currentMarathonId) {
+                    try {
+                        const families = await fetchMarathonFamilies(currentMarathonId);
+                        if (active) {
+                            setAllFamilies(families);
+                            setActiveFamilyId(prev => prev ?? fam?.id ?? families[0]?.id ?? null);
+                        }
+                    } catch (e) {
+                        console.error('Failed to load families', e);
+                    }
+                } else if (fam && active) {
+                    setActiveFamilyId(fam.id);
                 }
             }
 
-            loadAll();
+            init();
             return () => { active = false; };
-        }, [
-            userProfile?.id,
-            currentFamily,
-            currentMarathonId,
-            setCurrentFamily,
-            fetchParticipants,
-        ])
+        }, [userProfile?.id, currentFamily, canPickFamily, currentMarathonId, setCurrentFamily])
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            if (activeFamilyId != null) fetchParticipants(activeFamilyId);
+        }, [activeFamilyId, fetchParticipants])
     );
 
     const onRefresh = useCallback(async () => {
-        if (!currentFamily) return;
+        if (activeFamilyId == null) return;
         setRefreshing(true);
         try {
-            await fetchParticipants();
+            await fetchParticipants(activeFamilyId);
         } finally {
             setRefreshing(false);
         }
-    }, [currentFamily, fetchParticipants]);
+    }, [activeFamilyId, fetchParticipants]);
 
     const openModal = (mode: ModalMode, participant?: Participant) => {
         setModalMode(mode);
@@ -173,7 +192,7 @@ export default function ParticipantsScreen() {
                 showToast('success', t('users.participantUpdated'));
             }
             closeModal();
-            await fetchParticipants();
+            if (activeFamilyId != null) await fetchParticipants(activeFamilyId);
         } catch (error) {
             console.error('Error saving participant:', error);
             showToast('error', error instanceof Error ? error.message : t('users.errorSavingParticipant'));
@@ -196,7 +215,7 @@ export default function ParticipantsScreen() {
                 try {
                     await deleteParticipant(p.id);
                     showToast('success', t('users.participantDeleted'));
-                    await fetchParticipants();
+                    if (activeFamilyId != null) await fetchParticipants(activeFamilyId);
                 } catch (error) {
                     console.error('Error deleting participant:', error);
                     showToast('error', t('users.errorDeletingParticipant'));
@@ -222,7 +241,7 @@ export default function ParticipantsScreen() {
                 </View>
                 <View style={styles.info}>
                     <Text style={styles.name}>{item.full_name}</Text>
-                    <Text style={styles.role}>{item.role}</Text>
+                    <Text style={[styles.role, { color: marathonTheme.primary }]}>{item.role}</Text>
                     <Text style={styles.date}>
                         {t('users.created')}: {new Date(item.created_at).toLocaleDateString()}
                     </Text>
@@ -236,7 +255,7 @@ export default function ParticipantsScreen() {
             <SafeAreaView style={styles.container}>
                 <Header title={t('users.participants')} />
                 <View style={styles.centered}>
-                    <ActivityIndicator size="large" color={Colors.purple[2]} />
+                    <ActivityIndicator size="large" color={marathonTheme.primary} />
                     <Text style={styles.loadingText}>{t('users.loadingParticipants')}</Text>
                 </View>
             </SafeAreaView>
@@ -247,20 +266,69 @@ export default function ParticipantsScreen() {
         <SafeAreaView style={styles.container}>
             <Header title={t('users.participants')} />
 
+            {/* Family context bar */}
+            {canPickFamily && allFamilies.length > 0 && (
+                <View style={styles.contextBar}>
+                    <TouchableOpacity
+                        style={styles.familyDropdownTrigger}
+                        onPress={() => setDropdownOpen(o => !o)}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.contextLabel}>CURRENTLY MANAGING</Text>
+                        <View style={styles.familyNameRow}>
+                            <View style={styles.activeDot} />
+                            <Text style={styles.familyNameText}>
+                                {allFamilies.find(f => f.id === activeFamilyId)?.name ?? '—'}
+                            </Text>
+                            <Ionicons name="chevron-down-outline" size={16} color={Colors.light.textPrimary} />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* Family dropdown */}
+            {canPickFamily && dropdownOpen && (
+                <View style={styles.dropdown}>
+                    {allFamilies.map(family => (
+                        <TouchableOpacity
+                            key={family.id}
+                            style={[
+                                styles.dropdownItem,
+                                activeFamilyId === family.id && styles.dropdownItemActive,
+                            ]}
+                            onPress={() => {
+                                setActiveFamilyId(family.id);
+                                setDropdownOpen(false);
+                            }}
+                        >
+                            <Text style={[
+                                styles.dropdownItemText,
+                                activeFamilyId === family.id && styles.dropdownItemTextActive,
+                            ]}>
+                                {family.name}
+                            </Text>
+                            {activeFamilyId === family.id && (
+                                <Ionicons name="checkmark" size={16} color={Colors.teal[2]} />
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+
             {/* List */}
             <FlatList
                 data={participants}
                 keyExtractor={(i) => i.id.toString()}
                 renderItem={renderParticipant}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.purple[2]]} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[marathonTheme.primary]} />
                 }
                 ListEmptyComponent={
                     <View style={styles.empty}>
                         <Ionicons name="people-outline" size={64} color={Colors.light.textSecondary} />
                         <Text style={styles.emptyTitle}>{t('users.noParticipants')}</Text>
                         <Text style={styles.emptyText}>{t('users.getStartedMessage')}</Text>
-                        <TouchableOpacity onPress={() => openModal('create')} style={styles.emptyBtn}>
+                        <TouchableOpacity onPress={() => openModal('create')} style={[styles.emptyBtn, { backgroundColor: marathonTheme.primary }]}>
                             <Text style={styles.emptyBtnText}>{t('users.addParticipant')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -269,7 +337,7 @@ export default function ParticipantsScreen() {
             />
 
             {/* Add Button */}
-            <TouchableOpacity onPress={() => openModal('create')} style={styles.addBtn}>
+            <TouchableOpacity onPress={() => openModal('create')} style={[styles.addBtn, { backgroundColor: marathonTheme.primary }]}>
                 <Ionicons name="add" size={24} color="#fff" />
             </TouchableOpacity>
 
@@ -279,15 +347,15 @@ export default function ParticipantsScreen() {
                     <SafeAreaView style={styles.modal}>
                         <View style={styles.modalHeader}>
                             <TouchableOpacity onPress={closeModal} style={styles.modalButton}>
-                                <Text style={styles.modalCancel}>{t('users.cancel')}</Text>
+                                <Text style={[styles.modalCancel, { color: marathonTheme.primary }]}>{t('users.cancel')}</Text>
                             </TouchableOpacity>
                             <Text style={styles.modalTitle}>
                                 {modalMode === 'create' ? t('users.addParticipant') : t('users.editParticipant')}
                             </Text>
-                            <TouchableOpacity 
-                                onPress={handleSubmit} 
+                            <TouchableOpacity
+                                onPress={handleSubmit}
                                 disabled={submitting}
-                                style={[styles.modalButton, styles.modalSaveButton]}
+                                style={[styles.modalButton, styles.modalSaveButton, { backgroundColor: marathonTheme.primary }]}
                             >
                                 {submitting ? (
                                     <ActivityIndicator color="#fff" />
@@ -570,5 +638,76 @@ const styles = StyleSheet.create({
     confirmationConfirmText: {
         color: '#fff',
         fontSize: Font.sizes.body,
+    } as TextStyle,
+    contextBar: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.cardBorder,
+        backgroundColor: Colors.light.background,
+    } as ViewStyle,
+    familyDropdownTrigger: {
+        flex: 1,
+    } as ViewStyle,
+    contextLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: Colors.light.textSecondary,
+        letterSpacing: 0.8,
+        marginBottom: 2,
+    } as TextStyle,
+    familyNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.xs,
+    } as ViewStyle,
+    activeDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: Colors.teal[2],
+    } as ViewStyle,
+    familyNameText: {
+        fontSize: Font.sizes.h2,
+        fontWeight: '700',
+        color: Colors.light.textPrimary,
+    } as TextStyle,
+    dropdown: {
+        position: 'absolute',
+        top: 120,
+        left: Spacing.lg,
+        right: Spacing.lg,
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.large,
+        borderWidth: 1,
+        borderColor: Colors.light.cardBorder,
+        zIndex: 100,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 8,
+    } as ViewStyle,
+    dropdownItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.cardBorder,
+    } as ViewStyle,
+    dropdownItemActive: {
+        backgroundColor: Colors.teal[0],
+    } as ViewStyle,
+    dropdownItemText: {
+        fontSize: Font.sizes.body,
+        color: Colors.light.textPrimary,
+    } as TextStyle,
+    dropdownItemTextActive: {
+        color: Colors.teal[3],
+        fontWeight: '600',
     } as TextStyle,
 });

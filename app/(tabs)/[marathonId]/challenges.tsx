@@ -8,14 +8,17 @@ import { BorderRadius, Colors, Font, Spacing } from "@/constants/Theme";
 import { useAuth } from '@/context/AuthContext';
 import { useFamily } from "@/context/FamilyContext";
 import { useMarathon } from "@/context/MarathonContext";
+import { useMarathonTheme } from "@/hooks/useMarathonTheme";
 import {
   type Challenge,
   type ChallengeWithProgress,
   type Family,
   deleteChallengeScore,
+  fetchChallengeAssignments,
   fetchMarathonChallenges,
   fetchMarathonFamilies,
-  updateChallengeScore
+  updateChallengeScore,
+  canUserEditChallenge,
 } from '@/services/challenges';
 import { getCurrentFamily } from '@/services/familyService';
 import { fetchWeeksByMarathonId } from '@/services/marathonService';
@@ -61,6 +64,7 @@ export default function ChallengesScreen() {
 
   const { marathonId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
+  const marathonTheme = useMarathonTheme();
   const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
   const { currentFamily, setCurrentFamily } = useFamily();
   const { userProfile } = useAuth();
@@ -71,11 +75,12 @@ export default function ChallengesScreen() {
 
   const [allFamilies, setAllFamilies] = useState<Family[]>([]);
   const [activeFamilyId, setActiveFamilyId] = useState<number | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [weeks, setWeeks] = useState<{ id: number; week_number: number; start_date: string; end_date: string }[]>([]);
   const [selectedWeekId, setSelectedWeekId] = useState<number | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekChallenges, setWeekChallenges] = useState<ChallengeWithProgress[]>([]);
   const [generalChallenges, setGeneralChallenges] = useState<ChallengeWithProgress[]>([]);
@@ -125,15 +130,20 @@ export default function ChallengesScreen() {
       setLoading(true);
       setError(null);
 
-      const { weekChallenges: weekly, generalChallenges: general } =
-        await fetchMarathonChallenges(
-          currentMarathonId,
-          activeFamilyId,
-          selectedWeekId
-        );
+      const [{ weekChallenges: weekly, generalChallenges: general }, assignments] =
+        await Promise.all([
+          fetchMarathonChallenges(currentMarathonId, activeFamilyId, selectedWeekId),
+          fetchChallengeAssignments(currentMarathonId),
+        ]);
 
-      setWeekChallenges(weekly);
-      setGeneralChallenges(general);
+      const assignmentMap = new Map(assignments.map(a => [a.challenge_id, a]));
+      const merge = (ch: ChallengeWithProgress) => {
+        const a = assignmentMap.get(ch.id);
+        return a ? { ...ch, assigned_user_id: a.user_id, assigned_user_name: a.assigned_user_name } : ch;
+      };
+
+      setWeekChallenges(weekly.map(merge));
+      setGeneralChallenges(general.map(merge));
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to fetch challenges');
@@ -189,15 +199,14 @@ export default function ChallengesScreen() {
   // inside your component:
   useFocusEffect(
     React.useCallback(() => {
-      // 1) whenever we focus and have marathon+family, load weeks
-      if (currentMarathonId && activeFamilyId) {
+      if (currentMarathonId) {
         loadWeeks();
       }
       // optional cleanup:
       return () => {
         // if you need to cancel inflight requests, do it here
       };
-    }, [currentMarathonId, currentFamily])
+    }, [currentMarathonId])
   );
 
   useFocusEffect(
@@ -210,6 +219,11 @@ export default function ChallengesScreen() {
     }, [selectedWeekId, activeFamilyId])
   );
   const handleChallengePress = (challenge: Challenge) => {
+    if (!canUserEditChallenge(challenge, userProfile?.role, userProfile?.id)) {
+      const owner = challenge.assigned_user_name ?? 'another leader';
+      showToast('error', t('challenges.lockedTitle'), t('challenges.lockedMessage', { owner }));
+      return;
+    }
     setSelectedChallenge(challenge);
     setModalVisible(true);
   };
@@ -265,7 +279,7 @@ export default function ChallengesScreen() {
       <SafeAreaView style={styles.safeArea}>
         <Header title={t('challenges.title')} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.purple[2]} />
+          <ActivityIndicator size="large" color={marathonTheme.primary} />
         </View>
       </SafeAreaView>
     );
@@ -277,7 +291,7 @@ export default function ChallengesScreen() {
         <Header title={t('challenges.title')} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchChallenges}>
+          <TouchableOpacity style={[styles.retryButton, { backgroundColor: marathonTheme.primary }]} onPress={fetchChallenges}>
             <Text>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
@@ -289,33 +303,64 @@ export default function ChallengesScreen() {
     <>
       <Header title={t('challenges.title')} />
       <SafeAreaView style={styles.safeArea}>
-        {/* Family picker — visible to admin/leader when marathon has it enabled */}
+        {/* Context bar */}
         {canPickFamily && allFamilies.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.familyPickerContainer}
-            contentContainerStyle={styles.familyPicker}
-          >
+          <View style={styles.contextBar}>
+            <TouchableOpacity
+              style={styles.familyDropdownTrigger}
+              onPress={() => setDropdownOpen(o => !o)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.contextLabel}>CURRENTLY MANAGING</Text>
+              <View style={styles.familyNameRow}>
+                <View style={styles.activeDot} />
+                <Text style={styles.familyNameText}>
+                  {allFamilies.find(f => f.id === activeFamilyId)?.name ?? '—'}
+                </Text>
+                <Ionicons name="chevron-down-outline" size={16} color={Colors.light.textPrimary} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.weekBadgeContainer}>
+              <Text style={styles.contextLabel}>COMPETITION</Text>
+              <View style={styles.weekBadge}>
+                <Text style={styles.weekBadgeText}>
+                  Week {weeks.find(w => w.id === selectedWeekId)?.week_number ?? '—'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Family dropdown */}
+        {canPickFamily && dropdownOpen && (
+          <View style={styles.dropdown}>
             {allFamilies.map(family => (
               <TouchableOpacity
                 key={family.id}
                 style={[
-                  styles.familyButton,
-                  activeFamilyId === family.id && styles.selectedFamilyButton,
+                  styles.dropdownItem,
+                  activeFamilyId === family.id && styles.dropdownItemActive,
                 ]}
-                onPress={() => setActiveFamilyId(family.id)}
+                onPress={() => {
+                  setActiveFamilyId(family.id);
+                  setDropdownOpen(false);
+                }}
               >
                 <Text style={[
-                  styles.familyButtonText,
-                  activeFamilyId === family.id && styles.selectedFamilyText,
+                  styles.dropdownItemText,
+                  activeFamilyId === family.id && styles.dropdownItemTextActive,
                 ]}>
                   {family.name}
                 </Text>
+                {activeFamilyId === family.id && (
+                  <Ionicons name="checkmark" size={16} color={marathonTheme.primary} />
+                )}
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </View>
         )}
+
         {/* Week selector */}
         <ScrollView
           horizontal
@@ -328,7 +373,7 @@ export default function ChallengesScreen() {
               key={week.id}
               style={[
                 styles.weekButton,
-                selectedWeekId === week.id && styles.selectedWeekButton,
+                selectedWeekId === week.id && [styles.selectedWeekButton, { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.primary }],
               ]}
               onPress={() => setSelectedWeekId(week.id)}
             >
@@ -352,13 +397,20 @@ export default function ChallengesScreen() {
           ]}
           renderItem={({ item: section }) => (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              {section.data.map((challenge) => (
+              <Text style={[styles.sectionTitle, { color: marathonTheme.shade }]}>{section.title}</Text>
+              {section.data.length === 0 ? (
+                <View style={styles.emptySection}>
+                  <Ionicons name="checkmark-circle-outline" size={36} color={Colors.light.textSecondary} />
+                  <Text style={styles.emptySectionText}>{t('challenges.noChallenges')}</Text>
+                </View>
+              ) : section.data.map((challenge) => {
+                const editable = canUserEditChallenge(challenge, userProfile?.role, userProfile?.id);
+                return (
                 <View key={challenge.id}>
-                  <View style={styles.challengeCard}>
+                  <View style={[styles.challengeCard, !editable && styles.challengeCardLocked]}>
                     <View style={styles.challengeHeader}>
                       <Text style={styles.challengeTitle}>{challenge.title}</Text>
-                      <View style={styles.pointsBadge}>
+                      <View style={[styles.pointsBadge, { backgroundColor: marathonTheme.primary }]}>
                         <Text style={styles.pointsText}>{challenge.points} pts</Text>
                       </View>
                     </View>
@@ -377,7 +429,7 @@ export default function ChallengesScreen() {
                         </Text>
                       </View>
                       <View style={styles.actionButtons}>
-                        {challenge.points_awarded && (
+                        {challenge.points_awarded && editable && (
                           <TouchableOpacity
                             style={[styles.statusButton, styles.deleteButton]}
                             onPress={() => handleDeletePress(challenge)}
@@ -388,20 +440,26 @@ export default function ChallengesScreen() {
                           </TouchableOpacity>
                         )}
                         <TouchableOpacity
-                          style={styles.statusButton}
+                          style={[styles.statusButton, { backgroundColor: marathonTheme.tint }, !editable && styles.statusButtonLocked]}
                           onPress={() => handleChallengePress(challenge)}
                         >
-                          <Text style={styles.statusButtonText}>
-                            {challenge.points_awarded
-                              ? t('challenges.editScore')
-                              : t('challenges.markComplete')}
+                          <Ionicons
+                            name={editable ? 'create-outline' : 'lock-closed-outline'}
+                            size={13}
+                            color={editable ? marathonTheme.primary : Colors.light.textSecondary}
+                          />
+                          <Text style={[styles.statusButtonText, { color: marathonTheme.primary }, !editable && styles.statusButtonTextLocked]}>
+                            {editable
+                              ? (challenge.points_awarded ? t('challenges.editScore') : t('challenges.markComplete'))
+                              : t('challenges.locked')}
                           </Text>
                         </TouchableOpacity>
                       </View>
                     </View>
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </View>
           )}
           keyExtractor={(section) => section.title}
@@ -548,6 +606,9 @@ const styles = StyleSheet.create({
     marginRight: Spacing.xs,
   },
   statusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.teal[0],
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
@@ -558,38 +619,91 @@ const styles = StyleSheet.create({
     fontSize: Font.sizes.caption,
     fontWeight: '600',
   },
-  familyPickerContainer: {
-    width: '100%',
-    flexGrow: 0,
+  contextBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
     backgroundColor: Colors.light.background,
   },
-  familyPicker: {
+  familyDropdownTrigger: {
+    flex: 1,
+  },
+  contextLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.light.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  familyNameRow: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
-  familyButton: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.large,
-    backgroundColor: Colors.teal[0],
-    borderWidth: 1,
-    borderColor: Colors.teal[1],
-  },
-  selectedFamilyButton: {
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.teal[2],
-    borderColor: Colors.teal[2],
   },
-  familyButtonText: {
-    fontSize: Font.sizes.caption,
-    fontWeight: '600',
+  familyNameText: {
+    fontSize: Font.sizes.h2,
+    fontWeight: '700',
+    color: Colors.light.textPrimary,
+  },
+  weekBadgeContainer: {
+    alignItems: 'flex-end',
+  },
+  weekBadge: {
+    backgroundColor: Colors.teal[0],
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.medium,
+  },
+  weekBadgeText: {
+    fontSize: Font.sizes.body,
+    fontWeight: '700',
     color: Colors.teal[3],
   },
-  selectedFamilyText: {
-    color: Colors.white,
+  dropdown: {
+    position: 'absolute',
+    top: 120,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.large,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    zIndex: 100,
+    shadowColor: Colors.light.cardShadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.cardBorder,
+  },
+  dropdownItemActive: {
+    backgroundColor: Colors.teal[0],
+  },
+  dropdownItemText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textPrimary,
+  },
+  dropdownItemTextActive: {
+    color: Colors.teal[3],
+    fontWeight: '600',
   },
   weekSelectorContainer: {
     width: '100%',
@@ -636,5 +750,28 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: Font.sizes.caption,
     fontWeight: '600',
+  },
+  emptySection: {
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  emptySectionText: {
+    fontSize: Font.sizes.body,
+    color: Colors.light.textSecondary,
+  },
+  challengeCardLocked: {
+    opacity: 0.5,
+  },
+  statusButtonLocked: {
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statusButtonTextLocked: {
+    color: Colors.light.textSecondary,
   },
 });

@@ -1,4 +1,5 @@
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
@@ -42,6 +43,7 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
   family,
 }) => {
   const { t } = useTranslation();
+  const marathonTheme = useMarathonTheme();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
 
@@ -110,8 +112,8 @@ const FamilyBreakdownModal: React.FC<FamilyBreakdownModalProps> = ({
 
           {/* Total Points */}
           <LinearGradient
-            colors={[Colors.purple[2], Colors.purple[3]]}
-            style={styles.totalPointsCard}
+            colors={[marathonTheme.primary, marathonTheme.shade]}
+            style={[styles.totalPointsCard, { shadowColor: marathonTheme.primary }]}
           >
             <Text style={styles.totalPointsLabel}>{t('leaderboard.points')}</Text>
             <Text style={styles.totalPointsValue}>

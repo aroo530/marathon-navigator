@@ -12,11 +12,18 @@ export type Challenge = {
     uses_percentage_based_scoring: boolean;
     is_active: boolean;
     created_at: string;
-    editable_by_roles: string[];  // Array of role names that can edit this challenge
-    week_challenge_id?: number;  // ID from the week_challenges table
-    points_awarded?: number,
-    percentage_score?: number,
+    editable_by_roles: string[];
+    week_challenge_id?: number;
+    points_awarded?: number;
+    percentage_score?: number;
+    assigned_user_id?: string | null;
+    assigned_user_name?: string | null;
+};
 
+export type ChallengeAssignment = {
+    challenge_id: number;
+    user_id: string;
+    assigned_user_name: string | null;
 };
 
 export type ChallengeWithProgress = Challenge & {
@@ -132,9 +139,35 @@ export const updateChallengeScore = async (
     }
 };
 
-export const canUserEditChallenge = (challenge: Challenge, userRole?: string | null): boolean => {
+export const fetchChallengeAssignments = async (marathonId: number): Promise<ChallengeAssignment[]> => {
+    const { data, error } = await supabase
+        .from('challenge_assignments')
+        .select('challenge_id, user_id, users(full_name)')
+        .eq('marathon_id', marathonId);
+
+    if (error) {
+        console.error('Error fetching challenge assignments:', error);
+        return [];
+    }
+
+    return (data ?? []).map((row: any) => ({
+        challenge_id: row.challenge_id,
+        user_id: row.user_id,
+        assigned_user_name: row.users?.full_name ?? null,
+    }));
+};
+
+export const canUserEditChallenge = (
+    challenge: Challenge,
+    userRole?: string | null,
+    userId?: string | null,
+): boolean => {
     if (!userRole || !challenge.editable_by_roles) return false;
-    return challenge.editable_by_roles.includes(userRole);
+    if (!challenge.editable_by_roles.includes(userRole)) return false;
+    if (userRole === 'admin') return true;
+    // If challenge is assigned, only the assigned user can edit
+    if (challenge.assigned_user_id) return challenge.assigned_user_id === userId;
+    return true;
 };
 
 // New Game-specific functions

@@ -24,6 +24,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMarathon } from "../../../context/MarathonContext";
+import { useMarathonTheme } from "@/hooks/useMarathonTheme";
 
 type Family = {
   id: number;
@@ -81,6 +82,7 @@ type FamilyBreakdownModalProps = {
 export default function LeaderboardScreen() {
   const { t } = useTranslation();
   const { selectedMarathon } = useMarathon();
+  const marathonTheme = useMarathonTheme();
   const currentMarathonId = selectedMarathon?.id;
   const [leaderboardData, setLeaderboardData] = useState<Family[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -135,12 +137,12 @@ export default function LeaderboardScreen() {
     <TouchableOpacity
       style={[
         styles.tableRow,
-        index % 2 === 0 ? styles.rowEven : styles.rowOdd
+        index % 2 === 0 ? styles.rowEven : [styles.rowOdd, { backgroundColor: marathonTheme.tint }],
       ]}
       onPress={() => handleFamilyPress(item)}
     >
       <View style={styles.rankColumn}>
-        <Text style={styles.rankText}>{index + 1}</Text>
+        <Text style={[styles.rankText, { color: marathonTheme.primary }]}>{index + 1}</Text>
       </View>
 
       <View style={styles.familyColumn}>
@@ -157,7 +159,7 @@ export default function LeaderboardScreen() {
       </View>
 
       <View style={styles.pointsColumn}>
-        <Text style={styles.familyPoints}>{item.totalpoints}</Text>
+        <Text style={[styles.familyPoints, { color: marathonTheme.primary, backgroundColor: marathonTheme.tint }]}>{item.totalpoints}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -167,7 +169,7 @@ export default function LeaderboardScreen() {
       <View style={styles.leaderboardContainer}>
         {leaderboardData.length > 0 ? (
           <>
-            <View style={styles.tableHeader}>
+            <View style={[styles.tableHeader, { backgroundColor: marathonTheme.primary, borderBottomColor: marathonTheme.shade }]}>
               <View style={styles.rankColumn}>
                 <Text style={styles.tableHeaderText}>{t('leaderboard.rank')}</Text>
               </View>
@@ -190,7 +192,7 @@ export default function LeaderboardScreen() {
           </View>
         )}
       </View>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { backgroundColor: marathonTheme.primary }]}>
         <ThemedText type="title" style={styles.headerTitle}>
           {t('activity.recentActivity')}
         </ThemedText>
@@ -222,7 +224,7 @@ export default function LeaderboardScreen() {
         </View>
 
         <View style={styles.weekBadge}>
-          <Text style={styles.weekText}>
+          <Text style={[styles.weekText, { color: marathonTheme.primary, backgroundColor: marathonTheme.tint }]}>
             {t('activity.week', { number: item.week_number })}
           </Text>
           <Text style={styles.timeAgo}>
@@ -241,7 +243,7 @@ export default function LeaderboardScreen() {
         // subtitle={selectedMarathon?.description}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.purple[1]} />
+          <ActivityIndicator size="large" color={marathonTheme.primary} />
           <ThemedText style={styles.loadingText}>{t('leaderboard.loading')}</ThemedText>
         </View>
       </View>
@@ -263,8 +265,8 @@ export default function LeaderboardScreen() {
           <RefreshControl
             refreshing={loading}
             onRefresh={loadData}
-            tintColor={Colors.purple[1]}
-            colors={[Colors.purple[1]]}
+            tintColor={marathonTheme.primary}
+            colors={[marathonTheme.primary]}
             progressBackgroundColor={Colors.white}
           />
         }
