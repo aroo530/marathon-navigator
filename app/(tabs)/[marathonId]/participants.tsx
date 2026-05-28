@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
@@ -85,7 +86,7 @@ export default function ParticipantsScreen() {
             const list = await fetchParticipantsByFamilyId(familyId);
             setParticipants(list);
         } catch (error) {
-            console.error('Error fetching participants:', error);
+            logger.error('Error fetching participants:', error);
             showToast('error', t('users.errorLoadingParticipants'));
         } finally {
             setLoading(false);
@@ -105,7 +106,7 @@ export default function ParticipantsScreen() {
                         fam = await getCurrentFamily(currentMarathonId, userProfile.id);
                         if (active && fam) setCurrentFamily(fam);
                     } catch (e) {
-                        console.error('Failed to load family', e);
+                        logger.error('Failed to load family', e);
                     }
                 }
 
@@ -117,7 +118,7 @@ export default function ParticipantsScreen() {
                             setActiveFamilyId(prev => prev ?? fam?.id ?? families[0]?.id ?? null);
                         }
                     } catch (e) {
-                        console.error('Failed to load families', e);
+                        logger.error('Failed to load families', e);
                     }
                 } else if (fam && active) {
                     setActiveFamilyId(fam.id);
@@ -194,7 +195,7 @@ export default function ParticipantsScreen() {
             closeModal();
             if (activeFamilyId != null) await fetchParticipants(activeFamilyId);
         } catch (error) {
-            console.error('Error saving participant:', error);
+            logger.error('Error saving participant:', error);
             showToast('error', error instanceof Error ? error.message : t('users.errorSavingParticipant'));
         } finally {
             setSubmitting(false);
@@ -217,7 +218,7 @@ export default function ParticipantsScreen() {
                     showToast('success', t('users.participantDeleted'));
                     if (activeFamilyId != null) await fetchParticipants(activeFamilyId);
                 } catch (error) {
-                    console.error('Error deleting participant:', error);
+                    logger.error('Error deleting participant:', error);
                     showToast('error', t('users.errorDeletingParticipant'));
                 } finally {
                     setConfirmationModal(prev => ({ ...prev, visible: false }));

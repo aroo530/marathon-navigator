@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { supabase } from "@/constants/supabaseClient";
 
 export type Challenge = {
@@ -97,7 +98,7 @@ export const fetchMarathonChallenges = async (
             p_week_id: weekId || null
         });
     if (error) {
-        console.error('Error fetching challenges:', error);
+        logger.error('Error fetching challenges:', error);
         throw error;
     }
 
@@ -134,7 +135,7 @@ export const updateChallengeScore = async (
         });
 
     if (error) {
-        console.error('Error updating challenge score:', error);
+        logger.error('Error updating challenge score:', error);
         throw error;
     }
 };
@@ -146,7 +147,7 @@ export const fetchChallengeAssignments = async (marathonId: number): Promise<Cha
         .eq('marathon_id', marathonId);
 
     if (error) {
-        console.error('Error fetching challenge assignments:', error);
+        logger.error('Error fetching challenge assignments:', error);
         return [];
     }
 
@@ -185,7 +186,7 @@ export const fetchGameChallenges = async (marathonId: number): Promise<GameChall
         .order('title');
 
     if (error) {
-        console.error('Error fetching game challenges:', error);
+        logger.error('Error fetching game challenges:', error);
         throw error;
     }
 
@@ -203,7 +204,7 @@ export const fetchMarathonFamilies = async (marathonId: number): Promise<Family[
         .order('name');
 
     if (error) {
-        console.error('Error fetching families:', error);
+        logger.error('Error fetching families:', error);
         throw error;
     }
 
@@ -232,7 +233,7 @@ export const addGameScore = async (
         });
 
     if (error) {
-        console.error('Error adding game score:', error);
+        logger.error('Error adding game score:', error);
         throw error;
     }
 };
@@ -251,7 +252,7 @@ export const fetchRecentGameEntries = async (
         });
 
     if (error) {
-        console.error('Error fetching recent game entries:', error);
+        logger.error('Error fetching recent game entries:', error);
         throw error;
     }
 
@@ -293,7 +294,7 @@ export const fetchRecentGameEntriesAPI = async (
         .limit(limit);
 
     if (error) {
-        console.error('Error fetching recent game entries via API:', error);
+        logger.error('Error fetching recent game entries via API:', error);
         throw error;
     }
 
@@ -329,7 +330,7 @@ export const getGameLeaderboard = async (marathonId: number): Promise<{
         });
 
     if (error) {
-        console.error('Error fetching game leaderboard:', error);
+        logger.error('Error fetching game leaderboard:', error);
         throw error;
     }
 
@@ -356,7 +357,7 @@ export const getFamilyGameStats = async (
         });
 
     if (error) {
-        console.error('Error fetching family game stats:', error);
+        logger.error('Error fetching family game stats:', error);
         throw error;
     }
 
@@ -379,7 +380,7 @@ export const deleteGameScore = async (scoreId: number): Promise<void> => {
         .eq('id', scoreId);
 
     if (error) {
-        console.error('Error deleting game score:', error);
+        logger.error('Error deleting game score:', error);
         throw error;
     }
 };
@@ -402,7 +403,7 @@ export const updateGameScore = async (
         .eq('id', scoreId);
 
     if (error) {
-        console.error('Error updating game score:', error);
+        logger.error('Error updating game score:', error);
         throw error;
     }
 };
@@ -485,7 +486,7 @@ export const getExistingScore = async (
             // No rows returned
             return null;
         }
-        console.error('Error fetching existing score:', error);
+        logger.error('Error fetching existing score:', error);
         throw error;
     }
 
@@ -519,7 +520,7 @@ export const deleteChallengeScore = async (
             challenge_id: challengeId,
         })
     if (error) {
-        console.error('Error deleting challenge score:', error);
+        logger.error('Error deleting challenge score:', error);
         throw error;
     }
 };

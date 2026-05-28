@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import FamilyBreakdownModal from "@/components/FamilyBreakdownModal";
 import { Header } from "@/components/Header";
 import { ThemedText } from "@/components/ThemedText";
@@ -101,7 +102,7 @@ export default function LeaderboardScreen() {
       setLeaderboardData(data);
       setActivityLogs(logs);
     } catch (error) {
-      console.error('Error loading leaderboard:', error);
+      logger.error('Error loading leaderboard:', error);
     } finally {
       setLoading(false);
     }

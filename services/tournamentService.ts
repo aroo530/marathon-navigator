@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { supabase } from "@/constants/supabaseClient";
 
 // Types
@@ -37,7 +38,7 @@ export const getCurrentTournament = async (
             p_week_id: weekId
         });
     if (error) {
-        console.error('Error fetching tournament:', error);
+        logger.error('Error fetching tournament:', error);
         throw error;
     }
     return data || null;
@@ -66,7 +67,7 @@ export const updateMatchResult = async (
         });
 
     if (error) {
-        console.error('Error updating match result:', error);
+        logger.error('Error updating match result:', error);
         throw error;
     }
 

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { useState } from "react";
 import { RefreshControl } from "react-native";
 import { Colors } from "@/constants/Theme";
@@ -10,7 +11,7 @@ export const usePullToRefresh = (refreshFunction: () => Promise<void>) => {
     try {
       await refreshFunction();
     } catch (error) {
-      console.error("Error refreshing:", error);
+      logger.error("Error refreshing:", error);
     } finally {
       setRefreshing(false);
     }

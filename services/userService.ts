@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { supabase } from '@/constants/supabaseClient';
 
 export type UserProfile = {
@@ -27,7 +28,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     .single();
 
   if (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error('Error fetching user profile:', error);
     return null;
   }
 
@@ -43,7 +44,7 @@ export async function fetchParticipantsByFamilyId(familyId: number): Promise<Par
 
   const { data, error } = await query;
   if (error) {
-    console.error('Error fetching participants:', error.message);
+    logger.error('Error fetching participants:', error.message);
     throw error;
   }
   return (data as Participant[]) || [];
@@ -67,7 +68,7 @@ export async function createParticipant(
     ]);
 
   if (error) {
-    console.error('Error creating participant:', error.message);
+    logger.error('Error creating participant:', error.message);
     throw error;
   }
 }
@@ -83,7 +84,7 @@ export async function updateParticipant(
     .eq('id', id);
 
   if (error) {
-    console.error('Error updating participant:', error.message);
+    logger.error('Error updating participant:', error.message);
     throw error;
   }
 }
@@ -98,7 +99,7 @@ export async function deleteParticipant(
     .eq('id', id);
 
   if (error) {
-    console.error('Error deleting participant:', error.message);
+    logger.error('Error deleting participant:', error.message);
     throw error;
   }
 }

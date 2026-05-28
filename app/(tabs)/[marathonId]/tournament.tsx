@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 // app/(tabs)/marathon/tournament.tsx
 import { Header } from '@/components/Header';
 import { ThemedText } from '@/components/ThemedText';
@@ -151,7 +152,7 @@ export default function TournamentScreen() {
       });
       setSelectedWeek(current?.week_number ?? allWeeks[0]?.week_number ?? null);
     } catch (err) {
-      console.error('Error loading weeks:', err);
+      logger.error('Error loading weeks:', err);
       Alert.alert(t('common.error'), t('tournament.errors.loadWeeks'));
     }
   };
@@ -173,7 +174,7 @@ export default function TournamentScreen() {
         });
       }
     } catch (err) {
-      console.error('Error loading tournament:', err);
+      logger.error('Error loading tournament:', err);
       setError(t('tournament.errors.loadTournament'));
       setTournament(null);
     } finally {
@@ -247,7 +248,7 @@ export default function TournamentScreen() {
         Alert.alert(t('common.error'), t('tournament.errors.updateMatch'));
       }
     } catch (err) {
-      console.error('Error updating match result:', err);
+      logger.error('Error updating match result:', err);
       Alert.alert(t('common.error'), t('tournament.errors.updateMatch'));
     }
   };

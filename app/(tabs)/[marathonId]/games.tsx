@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { Header } from '@/components/Header';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -113,7 +114,7 @@ export default function Games() {
                         if (score) setManualPoints(score.points_awarded.toString());
                     }
                 } catch (err) {
-                    console.error('Error checking existing score:', err);
+                    logger.error('Error checking existing score:', err);
                     if (isActive) setExistingScore(null);
                 }
             };
@@ -137,7 +138,7 @@ export default function Games() {
             setRecent(recentEntriesData);
 
         } catch (error) {
-            console.error('Error fetching initial data:', error);
+            logger.error('Error fetching initial data:', error);
             Alert.alert('Error', 'Failed to load game data.');
         } finally {
             setLoading(false);
@@ -151,7 +152,7 @@ export default function Games() {
             // --- Transform data for the UI using the service helper ---
             return challengeService.transformToRecentEntries(entries);
         } catch (error) {
-            console.error('Error fetching recent entries:', error);
+            logger.error('Error fetching recent entries:', error);
             return []; // Return empty on error
         }
     };

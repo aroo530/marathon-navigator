@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { fetchAvailableMarathons } from '../../services/marathonService';
@@ -13,7 +14,7 @@ export default function MarathonList() {
         const data = await fetchAvailableMarathons();
         setMarathons(data);
       } catch (err: any) {
-        console.error(err);
+        logger.error(err);
         setError(err.message);
       } finally {
         setLoading(false);

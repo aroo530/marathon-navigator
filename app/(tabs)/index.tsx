@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -36,7 +37,7 @@ export default function HomeScreen() {
         const fam = await getCurrentFamily(m.id, userProfile.id);
         fam && setCurrentFamily(fam);
       } catch (err) {
-        console.error("fetch family failed:", err);
+        logger.error("fetch family failed:", err);
       }
     }
     router.push(`/${m.id}`);

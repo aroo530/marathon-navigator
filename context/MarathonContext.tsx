@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { fetchAvailableMarathons } from '../services/marathonService';
@@ -74,7 +75,7 @@ function MarathonProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (err) {
-        console.error('Error loading stored marathon:', err);
+        logger.error('Error loading stored marathon:', err);
       }
 
       try {

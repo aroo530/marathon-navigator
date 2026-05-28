@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 // app/(tabs)/marathon/challenges.tsx
 import { useTranslation } from 'react-i18next';
 
@@ -116,7 +117,7 @@ export default function ChallengesScreen() {
 
       setSelectedWeekId(current?.id ?? allWeeks[0]?.id ?? null);
     } catch (err) {
-      console.error('Error loading weeks', err);
+      logger.error('Error loading weeks', err);
       const msg = err instanceof Error ? err.message : 'Could not load weeks.';
       showToast('error', 'Error', msg);
       setError(msg);
@@ -145,7 +146,7 @@ export default function ChallengesScreen() {
       setWeekChallenges(weekly.map(merge));
       setGeneralChallenges(general.map(merge));
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError(err instanceof Error ? err.message : 'Failed to fetch challenges');
     } finally {
       setLoading(false);
@@ -167,7 +168,7 @@ export default function ChallengesScreen() {
             fam = await getCurrentFamily(currentMarathonId, userProfile.id);
             if (isActive && fam) setCurrentFamily(fam);
           } catch (err) {
-            console.error('fetch family failed:', err);
+            logger.error('fetch family failed:', err);
           }
         }
 
@@ -183,7 +184,7 @@ export default function ChallengesScreen() {
               );
             }
           } catch (err) {
-            console.error('fetch all families failed:', err);
+            logger.error('fetch all families failed:', err);
           }
         } else if (fam && isActive) {
           setActiveFamilyId(fam.id);
