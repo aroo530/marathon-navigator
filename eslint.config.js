@@ -5,7 +5,6 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    userInterfaceStyle: "light",
-    ignores: ["dist/*"],
+    ignores: ["dist/*", "tools/**"],
   },
 ]);

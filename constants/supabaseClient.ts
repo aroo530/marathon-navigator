@@ -16,7 +16,7 @@ const secureStorage = {
   removeItem: SecureStore.deleteItemAsync,
 };
 
-const auth: Parameters<typeof createClient>[2]['auth'] = {
+const auth: NonNullable<Parameters<typeof createClient>[2]>['auth'] = {
   autoRefreshToken: true,
   persistSession: true,
   ...(isWeb ? {} : { storage: secureStorage }),
