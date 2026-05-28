@@ -69,6 +69,7 @@ export default function AttendanceScreen() {
   const [scanFeedback, setScanFeedback] = useState<ScanFeedback | null>(null);
   // Counter shown in the scanner overlay — increments immediately on each accepted scan
   const [sessionScanCount, setSessionScanCount] = useState(0);
+  const [lastScannedPerson, setLastScannedPerson] = useState<{ name: string; team: string } | null>(null);
 
   // Refs for the scan queue (never causes re-renders)
   const lastScanRef = useRef({ data: '', time: 0 });
@@ -231,6 +232,15 @@ export default function AttendanceScreen() {
     // Accept immediately
     scannedQRSet.current.add(data);
     setSessionScanCount(prev => prev + 1);
+
+    // Show the participant's name from the QR payload
+    try {
+      const qrInfo = JSON.parse(data);
+      if (qrInfo.name) {
+        setLastScannedPerson({ name: qrInfo.name, team: qrInfo.team ?? '' });
+      }
+    } catch { /* ignore */ }
+
     showFeedback(t('attendance.scanFeedback.queued'), 'success');
 
     scanQueue.current.push(data);
@@ -248,6 +258,7 @@ export default function AttendanceScreen() {
     affectedFamilies.current.clear();
     setSessionScanCount(0);
     setScanFeedback(null);
+    setLastScannedPerson(null);
     // Snapshot mutable session values into refs so the async queue always sees current values
     sessionWeekId.current = selectedWeekId;
     sessionUserId.current = session?.user?.id ?? null;
@@ -513,6 +524,16 @@ export default function AttendanceScreen() {
           </View>
 
           <View style={styles.overlayBottom}>
+            {/* Persistent name banner — stays until next scan */}
+            {lastScannedPerson ? (
+              <View style={styles.scannedPersonBanner}>
+                <Text style={styles.scannedPersonName}>{lastScannedPerson.name}</Text>
+                {lastScannedPerson.team ? (
+                  <Text style={styles.scannedPersonTeam}>{lastScannedPerson.team}</Text>
+                ) : null}
+              </View>
+            ) : null}
+
             {scanFeedback ? (
               <View style={[styles.feedbackCard, { backgroundColor: feedbackBg[scanFeedback.type] }]}>
                 <Text style={styles.feedbackText}>{scanFeedback.text}</Text>
@@ -709,6 +730,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   } as ViewStyle,
   feedbackPlaceholder: { width: '100%', height: 48 } as ViewStyle,
+  scannedPersonBanner: {
+    width: '100%',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: BorderRadius.medium,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  } as ViewStyle,
+  scannedPersonName: {
+    color: Colors.white,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+  } as TextStyle,
+  scannedPersonTeam: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: Font.sizes.body,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 2,
+  } as TextStyle,
   feedbackText: {
     color: Colors.white,
     fontSize: Font.sizes.body,
