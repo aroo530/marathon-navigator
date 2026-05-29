@@ -24,3 +24,6 @@ jobs:
 
       - name: ESLint
         run: npx eslint . --ext .ts,.tsx
+
+      - name: Unit tests
+        run: npx jest --no-coverage
