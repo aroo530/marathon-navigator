@@ -1,3 +1,11 @@
+import { supabase } from '@/constants/supabaseClient';
+
+/**
+ * The auto-mapped mock for the Supabase client (via moduleNameMapper).
+ * Cast so callers can call .mockResolvedValue etc. without extra type assertions.
+ */
+export const supabaseMock = supabase as unknown as { from: jest.Mock; rpc: jest.Mock };
+
 /**
  * Creates a chainable Supabase query builder mock that resolves to { data, error }.
  * Covers: .from().select().eq().neq().order().single() and .rpc() patterns.
@@ -17,16 +25,3 @@ export function makeChain(result: { data: unknown; error: unknown }) {
   } as any;
   return chain;
 }
-
-export const supabaseMock = {
-  from: jest.fn(),
-  rpc:  jest.fn(),
-};
-
-jest.mock('@/constants/supabaseClient', () => ({
-  supabase: supabaseMock,
-}));
-
-jest.mock('@/utils/logger', () => ({
-  logger: { log: jest.fn(), warn: jest.fn(), error: jest.fn() },
-}));
