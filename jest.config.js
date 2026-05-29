@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/__tests__'],
+  roots: ['<rootDir>/__tests__/services'],
   moduleNameMapper: {
     // Match both @/ alias and relative imports for these two modules
     '.*constants/supabaseClient': '<rootDir>/__tests__/__mocks__/supabaseClient.ts',
