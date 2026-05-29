@@ -1,12 +1,12 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
-import { Link, router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { I18nManager } from 'react-native';
 import RNRestart from 'react-native-restart';
-
 import {
   Alert,
   KeyboardAvoidingView,
@@ -16,30 +16,44 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
 
 export default function SignInScreen() {
   const { t, i18n } = useTranslation();
-
-  const [email, setEmail] = useState('');
+  const { signIn } = useAuth();
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
 
   const handleSignIn = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!phone || !password) {
+      Alert.alert(t('auth.error', 'Error'), t('auth.fillAllFields', 'Please fill in all fields'));
       return;
     }
 
     try {
       setIsLoading(true);
-      await signIn(email, password);
+      await signIn(phone, password);
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'An error occurred');
+      Alert.alert(
+        t('auth.error', 'Error'),
+        error instanceof Error ? error.message : t('common.error', 'An error occurred')
+      );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleLanguage = async () => {
+    const nextLang = i18n.language === 'en' ? 'ar' : 'en';
+    const isRTL = nextLang === 'ar';
+    await i18n.changeLanguage(nextLang);
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.forceRTL(isRTL);
+      I18nManager.allowRTL(isRTL);
+      Alert.alert(t('common.restartTitle', 'Restart required'), t('common.restartMessage', 'The app will restart to apply language changes.'), [
+        { text: 'OK', onPress: () => RNRestart.Restart() },
+      ]);
     }
   };
 
@@ -49,22 +63,22 @@ export default function SignInScreen() {
       style={styles.container}
     >
       <ThemedView style={styles.content}>
-        <ThemedText type="title" style={styles.title}>{t('auth.welcomeBack')}</ThemedText>
-        <ThemedText type="subtitle" style={styles.subtitle}>{t('auth.signInToContinue')}</ThemedText>
+        <ThemedText type="title" style={styles.title}>{t('auth.welcomeBack', 'Welcome back')}</ThemedText>
+        <ThemedText type="subtitle" style={styles.subtitle}>{t('auth.signInToContinue', 'Sign in to continue')}</ThemedText>
 
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder={t('auth.email')}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
+            placeholder={t('auth.phoneNumber', 'Phone number')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
             placeholderTextColor={Colors.light.textSecondary}
           />
           <TextInput
             style={styles.input}
-            placeholder={t('auth.password')}
+            placeholder={t('auth.password', 'Password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -77,52 +91,16 @@ export default function SignInScreen() {
             disabled={isLoading}
           >
             <ThemedText type="defaultSemiBold" style={styles.buttonText}>
-              {isLoading ? t('auth.signingIn') : t('auth.signIn')}
+              {isLoading ? t('auth.signingIn', 'Signing in…') : t('auth.signIn', 'Sign in')}
             </ThemedText>
           </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <ThemedText type="default">{t('auth.noAccount')}</ThemedText>
-            <Link href="/sign-up" asChild>
-              <TouchableOpacity>
-                <ThemedText type="defaultSemiBold" style={styles.linkText}>{t('auth.signUp')}</ThemedText>
-              </TouchableOpacity>
-            </Link>
-          </View>
-          <TouchableOpacity
-            onPress={async () => {
-              const nextLang = i18n.language === 'en' ? 'ar' : 'en';
-              const isRTL = nextLang === 'ar';
-
-              await i18n.changeLanguage(nextLang);
-
-              if (I18nManager.isRTL !== isRTL) {
-                I18nManager.forceRTL(isRTL);
-                I18nManager.allowRTL(isRTL);
-                // Restart app to apply layout changes
-                Alert.alert(
-                  t('common.restartTitle'),
-                  t('common.restartMessage'),
-                  [
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        // Reload the app to apply RTL
-                        RNRestart.Restart();
-                      },
-                    },
-                  ]
-                );
-              }
-            }}
-            style={styles.langButton}
-          >
-            <ThemedText type="defaultSemiBold" style={styles.linkText}>
-              {i18n.language === 'en' ? 'العربية' : 'English'}
-            </ThemedText>
-          </TouchableOpacity>
-
         </View>
+
+        <TouchableOpacity onPress={toggleLanguage} style={styles.langButton}>
+          <ThemedText type="defaultSemiBold" style={styles.langText}>
+            {i18n.language === 'en' ? 'العربية' : 'English'}
+          </ThemedText>
+        </TouchableOpacity>
       </ThemedView>
     </KeyboardAvoidingView>
   );
@@ -168,17 +146,11 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.white,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: Spacing.md,
-  },
-  linkText: {
-    color: Colors.purple[2],
-    marginLeft: Spacing.xs,
-  },
   langButton: {
     alignSelf: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xl,
   },
-}); 
+  langText: {
+    color: Colors.purple[2],
+  },
+});

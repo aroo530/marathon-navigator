@@ -39,12 +39,14 @@ export default function ProfileScreen() {
             ) : (
               <View style={[styles.avatar, styles.placeholderAvatar]}>
                 <Text style={styles.avatarText}>
-                  {session?.user?.email?.[0].toUpperCase()}
+                  {(userProfile?.full_name ?? session?.user?.email ?? '?')[0].toUpperCase()}
                 </Text>
               </View>
             )}
           </View>
-          <Text style={styles.email}>{session?.user?.email}</Text>
+          <Text style={styles.email}>
+            {session?.user?.email?.replace(/@marathonnavigator\.app$/, '') ?? ''}
+          </Text>
           {userProfile?.full_name && (
             <Text style={styles.name}>{userProfile.full_name}</Text>
           )}

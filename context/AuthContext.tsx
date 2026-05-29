@@ -1,15 +1,20 @@
-// context/AuthContext.tsx
 import { supabase } from '@/constants/supabaseClient';
 import { UserProfile, getUserProfile } from '@/services/userService';
 import { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState } from 'react';
 
+const PHONE_EMAIL_DOMAIN = 'marathonnavigator.app';
+
+function phoneToEmail(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return `${digits}@${PHONE_EMAIL_DOMAIN}`;
+}
+
 type AuthContextType = {
   session: Session | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (phone: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -20,38 +25,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile whenever session changes
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (session?.user) {
-
         const profile = await getUserProfile(session.user.id);
         setUserProfile(profile);
       } else {
         setUserProfile(null);
       }
     };
-
     fetchUserProfile();
   }, [session]);
 
   useEffect(() => {
     let unsubscribed = false;
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
 
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!unsubscribed) {
         setSession(session);
         setIsLoading(false);
       }
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!unsubscribed) {
-        setSession(session);
-
-      }
+      if (!unsubscribed) setSession(session);
     });
 
     return () => {
@@ -60,20 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Auth methods
-  const signUp = async (email: string, password: string) => {
+  const signIn = async (phone: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
+      const email = phoneToEmail(phone);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } finally {
@@ -92,14 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      session,
-      userProfile,
-      isLoading,
-      signUp,
-      signIn,
-      signOut
-    }}>
+    <AuthContext.Provider value={{ session, userProfile, isLoading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
