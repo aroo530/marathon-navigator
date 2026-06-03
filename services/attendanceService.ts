@@ -38,14 +38,18 @@ export async function fetchAttendanceChallengeForWeek(
   marathonId: number,
   weekId: number,
 ): Promise<AttendanceChallenge | null> {
-  const { data: ch } = await supabase
+  // Resilient to a future duplicate attendance+NULL-game_type challenge: take the
+  // first by id rather than erroring on multiple rows.
+  const { data: rows } = await supabase
     .from('challenges')
     .select('id, points')
     .eq('marathon_id', marathonId)
     .eq('challenge_type', 'attendance')
     .is('game_type', null)
-    .maybeSingle();
+    .order('id', { ascending: true })
+    .limit(1);
 
+  const ch = rows?.[0];
   if (!ch) return null;
 
   const { data: wc } = await supabase
