@@ -156,6 +156,24 @@ tr:last-child td { border-bottom: none; }
 .card-info span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .card-info .err { color: var(--red); font-size: 10px; margin-top: 4px; }
 
+.card-item { position: relative; }
+.card-edit-btn {
+  display: none;
+  position: absolute;
+  top: 6px; right: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(14,14,18,0.85);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.card-edit-btn:hover { background: var(--accent); color: #fff; }
+.card-item:hover .card-edit-btn { display: block; }
+
 /* ── Layout Editor ── */
 .layout-editor {
   display: flex;

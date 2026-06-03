@@ -359,6 +359,22 @@ export default function LayoutEditor({
                       </select>
                     </label>
                   </div>
+                  {key === "name" && (
+                    <div className="le-row">
+                      <label>
+                        Wrap width
+                        <input
+                          type="number"
+                          value={L.maxWidth ?? ""}
+                          min={50}
+                          max={2000}
+                          onChange={(e) =>
+                            set(key, "maxWidth", parseInt(e.target.value) || undefined)
+                          }
+                        />
+                      </label>
+                    </div>
+                  )}
                 </>
               )}
             </div>

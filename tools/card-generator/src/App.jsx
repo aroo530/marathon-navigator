@@ -1,47 +1,31 @@
 import { useState, useRef } from 'react';
 import JSZip from 'jszip';
+import * as XLSX from 'xlsx';
 import LayoutEditor from './LayoutEditor';
+import CropEditor from './CropEditor';
 import './App.css';
 
 const STEPS = ['CSV', 'Import', 'Configure', 'Generate', 'Done'];
 
-// ── CSV parser — handles quoted fields ────────────────────────────────────────
+// ── Spreadsheet parser (CSV + XLSX via SheetJS) ───────────────────────────────
 
-function parseLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-    } else if (line[i] === ',' && !inQ) {
-      result.push(cur); cur = '';
-    } else {
-      cur += line[i];
-    }
-  }
-  result.push(cur);
-  return result;
-}
+function parseSheet(workbook) {
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  // header:1 gives array-of-arrays; defval ensures empty cells are '' not undefined
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  if (rows.length < 2) return [];
 
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  const rawHeaders = parseLine(lines[0]);
-  const headers = rawHeaders.map(h => h.trim().toLowerCase());
+  const rawHeaders = rows[0].map(h => String(h).trim().toLowerCase());
+  const col = (...keys) => rawHeaders.findIndex(h => keys.some(k => h === k || h.includes(k)));
+  const iName   = col('name', 'full name', 'full_name', 'participant', 'اسم');
+  const iFamily = col('family', 'team', 'group', 'عائلة', 'فريق');
+  const iPhoto  = col('photo_url', 'photo url', 'photo', 'image url', 'image', 'picture', 'صورة');
 
-  const col = (...keys) => headers.findIndex(h => keys.some(k => h === k || h.includes(k)));
-  const iName   = col('name', 'full name', 'full_name', 'participant');
-  const iFamily = col('family', 'team', 'group');
-  const iPhoto  = col('photo_url', 'photo url', 'photo', 'image url', 'image', 'picture');
-
-  return lines.slice(1).map(line => {
-    const vals = parseLine(line);
-    return {
-      name:      (vals[iName]   ?? '').trim(),
-      family:    (vals[iFamily] ?? '').trim(),
-      photo_url: (vals[iPhoto]  ?? '').trim(),
-    };
-  }).filter(r => r.name && r.family);
+  return rows.slice(1).map(vals => ({
+    name:      String(vals[iName]   ?? '').trim(),
+    family:    String(vals[iFamily] ?? '').trim(),
+    photo_url: String(vals[iPhoto]  ?? '').trim(),
+  })).filter(r => r.name && r.family);
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -55,6 +39,7 @@ export default function App() {
   const [csvRows, setCsvRows]         = useState([]);
   const [marathonId, setMarathonId]   = useState('');
   const [importing, setImporting]     = useState(false);
+  const [lastWasDryRun, setLastWasDryRun] = useState(false);
   const [importLog, setImportLog]     = useState([]); // [{text, type}]
   const [participants, setParticipants] = useState([]);
   const [template, setTemplate]       = useState(null); // {base64, width, height}
@@ -63,7 +48,11 @@ export default function App() {
   const [jsonDraft, setJsonDraft]     = useState(''); // raw JSON when editing
   const [aiPrompt, setAiPrompt]       = useState('');
   const [cards, setCards]             = useState([]); // [{participant, status, cardBase64, error}]
+  const [editingIdx, setEditingIdx]   = useState(null); // index of card being edited
+  const [editPrompt, setEditPrompt]   = useState('');
   const templateRef = useRef();
+  const csvRef = useRef();
+  const configRef = useRef();
 
   // ── Step 0: CSV ─────────────────────────────────────────────────────────────
 
@@ -71,37 +60,57 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => setCsvRows(parseCSV(ev.target.result));
-    reader.readAsText(file);
+    reader.onload = ev => {
+      const data = new Uint8Array(ev.target.result);
+      const workbook = XLSX.read(data, { type: 'array', codepage: 65001 });
+      setCsvRows(parseSheet(workbook));
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   // ── Step 1: Import ──────────────────────────────────────────────────────────
 
-  async function handleImport() {
+  async function handleImport(dryRun = false) {
     setImporting(true);
     setStep(1);
-    setImportLog([{ text: `Importing ${csvRows.length} rows…`, type: 'info' }]);
+    setImportLog([{ text: `${dryRun ? 'Previewing' : 'Importing'} ${csvRows.length} rows…`, type: 'info' }]);
 
     try {
       const res = await fetch('/api/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: csvRows, marathonId: Number(marathonId) }),
+        body: JSON.stringify({ rows: csvRows, marathonId: Number(marathonId), dryRun }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      const log = data.participants.map(p =>
+      const header = dryRun
+        ? [{ text: '— Dry run — no changes written —', type: 'info' }]
+        : [];
+
+      const familyLines = (data.newFamilies ?? []).map(name =>
+        ({ text: `${dryRun ? '+ Would create family' : '✓ Created family'}: ${name}`, type: 'created' })
+      );
+
+      const participantLines = data.participants.map(p =>
         p.error
           ? { text: `✗ ${p.name} — ${p.error}`, type: 'error' }
-          : { text: `${p.isNew ? '✓ Created' : '↺ Exists'} ${p.name} (${p.family})`, type: p.isNew ? 'created' : 'existing' }
+          : {
+              text: `${p.isNew
+                ? (dryRun ? '+ Would create' : '✓ Created')
+                : '↺ Exists'} ${p.name} (${p.family}${p.isNewFamily ? ' — new family' : ''})`,
+              type: p.isNew ? 'created' : 'existing',
+            }
       );
-      setImportLog(log);
+
+      setImportLog([...header, ...familyLines, ...participantLines]);
+      // Always set participants — dry run uses existing IDs where available, null for new ones
       setParticipants(data.participants.filter(p => !p.error));
     } catch (e) {
       setImportLog([{ text: `Error: ${e.message}`, type: 'error' }]);
     } finally {
       setImporting(false);
+      setLastWasDryRun(dryRun);
       setStep(2);
     }
   }
@@ -150,7 +159,7 @@ export default function App() {
           body: JSON.stringify({
             participant: participants[i],
             layout: parsedLayout,
-            prompt: aiPrompt || null,
+            prompt: lastWasDryRun ? null : (aiPrompt || null),
           }),
         });
         const data = await res.json();
@@ -165,6 +174,72 @@ export default function App() {
     }
 
     setStep(4);
+  }
+
+  // ── Per-card crop & regenerate ────────────────────────────────────────────────
+
+  function openCropEditor(idx) {
+    setEditingIdx(idx);
+    setEditPrompt(aiPrompt);
+  }
+
+  // ── Config save / load ────────────────────────────────────────────────────────
+
+  function handleSaveConfig() {
+    const config = { layout: layoutObj, aiPrompt };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: 'card-config.json',
+    });
+    a.click();
+  }
+
+  function handleLoadConfig(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const config = JSON.parse(ev.target.result);
+        if (config.layout) {
+          setLayoutObj(config.layout);
+          setJsonDraft(JSON.stringify(config.layout, null, 2));
+        }
+        if (config.aiPrompt !== undefined) setAiPrompt(config.aiPrompt);
+      } catch {
+        alert('Invalid config file');
+      }
+    };
+    reader.readAsText(file);
+    if (configRef.current) configRef.current.value = '';
+  }
+
+  async function handleRegenCard(photoBase64) {
+    const idx = editingIdx;
+    setEditingIdx(null);
+    setCards(prev => prev.map((c, i) => i === idx ? { ...c, status: 'generating' } : c));
+    try {
+      const res = await fetch('/api/generate-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant: cards[idx].participant,
+          layout: layoutObj,
+          prompt: editPrompt || null,
+          photoBase64,
+        }),
+      });
+      const data = await res.json();
+      setCards(prev => prev.map((c, i) => i === idx
+        ? res.ok
+          ? { ...c, status: 'done', cardBase64: data.card }
+          : { ...c, status: 'error', error: data.error }
+        : c
+      ));
+    } catch (e) {
+      setCards(prev => prev.map((c, i) => i === idx ? { ...c, status: 'error', error: e.message } : c));
+    }
   }
 
   // ── Step 4: Download ─────────────────────────────────────────────────────────
@@ -189,6 +264,7 @@ export default function App() {
     setCsvRows([]);
     setMarathonId('');
     setImporting(false);
+    setLastWasDryRun(false);
     setImportLog([]);
     setParticipants([]);
     setTemplate(null);
@@ -197,6 +273,7 @@ export default function App() {
     setJsonDraft('');
     setAiPrompt('');
     setCards([]);
+    if (csvRef.current) csvRef.current.value = '';
     if (templateRef.current) templateRef.current.value = '';
   }
 
@@ -243,13 +320,13 @@ export default function App() {
           <section>
             <h2>Upload CSV</h2>
             <p className="hint">
-              Required columns: <code>name</code>, <code>family</code> (or <code>team</code>)
-              &nbsp;— optional: <code>photo_url</code>
+              Accepts CSV or Excel (.xlsx). Required columns: <code>name</code>, <code>family</code> (or <code>team</code>)
+              &nbsp;— optional: <code>photo_url</code>. Arabic is supported.
             </p>
 
             <div className="row gap">
               <label className="file-btn">
-                Choose CSV <input type="file" accept=".csv" onChange={handleCSVFile} hidden />
+                Choose file <input ref={csvRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleCSVFile} hidden />
               </label>
               <input
                 className="input"
@@ -285,9 +362,16 @@ export default function App() {
                   <button
                     className="btn primary"
                     disabled={!marathonId || importing}
-                    onClick={handleImport}
+                    onClick={() => handleImport(false)}
                   >
                     Import to Supabase →
+                  </button>
+                  <button
+                    className="btn ghost"
+                    disabled={!marathonId || importing}
+                    onClick={() => handleImport(true)}
+                  >
+                    🔍 Dry Run
                   </button>
                   <button className="btn ghost" onClick={handleStartOver}>
                     ↺ Start Over
@@ -298,10 +382,10 @@ export default function App() {
           </section>
         )}
 
-        {/* ── Import ── */}
+        {/* ── Import / Dry-run preview ── */}
         {step === 1 && (
           <section>
-            <h2>Importing…</h2>
+            <h2>{importing ? (lastWasDryRun ? 'Previewing…' : 'Importing…') : (lastWasDryRun ? 'Dry Run Preview' : 'Importing…')}</h2>
             <div className="log">
               {importLog.map((l, i) => (
                 <div key={i} className={`log-line ${l.type}`}>{l.text}</div>
@@ -326,10 +410,21 @@ export default function App() {
 
             <div className="field">
               <label>Card Template (PNG / JPG)</label>
-              <label className="file-btn">
-                Choose Template
-                <input type="file" accept="image/*" ref={templateRef} onChange={handleTemplateFile} hidden />
-              </label>
+              <div className="row gap">
+                <label className="file-btn">
+                  Choose Template
+                  <input type="file" accept="image/*" ref={templateRef} onChange={handleTemplateFile} hidden />
+                </label>
+                <label className="file-btn" title="Load a saved card-config.json">
+                  📂 Load Config
+                  <input type="file" accept=".json" ref={configRef} onChange={handleLoadConfig} hidden />
+                </label>
+                {layoutObj && (
+                  <button type="button" className="file-btn" onClick={handleSaveConfig} title="Save current layout + prompt as JSON">
+                    💾 Save Config
+                  </button>
+                )}
+              </div>
               {template && (
                 <p className="hint mt">{template.width} × {template.height} px — layout auto-filled below</p>
               )}
@@ -392,15 +487,25 @@ export default function App() {
               </div>
             )}
 
+            {lastWasDryRun && (
+              <p className="hint mt" style={{ color: 'var(--amber)' }}>
+                ⚠ Dry run — cards will be generated with original photos (no AI). Nothing will be saved to Supabase.
+              </p>
+            )}
             <div className="nav-row">
               <button
                 className="btn primary"
                 disabled={!template || !layoutObj}
                 onClick={handleGenerate}
               >
-                Generate All {participants.length} Cards →
+                {lastWasDryRun ? '🔍 Preview ' : 'Generate All '}{participants.length} Cards →
               </button>
               <div className="nav-row-right">
+                {lastWasDryRun && (
+                  <button className="btn ghost" disabled={!marathonId} onClick={() => handleImport(false)}>
+                    ✓ Confirm Import
+                  </button>
+                )}
                 <button className="btn ghost" onClick={handleBack}>
                   ← Back
                 </button>
@@ -447,6 +552,15 @@ export default function App() {
                     <span>{c.participant.family}</span>
                     {c.error && <span className="err">{c.error}</span>}
                   </div>
+                  {c.participant.photo_url && c.status !== 'generating' && (
+                    <button
+                      className="card-edit-btn"
+                      title="Adjust crop"
+                      onClick={() => openCropEditor(i)}
+                    >
+                      ✂ Crop
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -465,6 +579,17 @@ export default function App() {
         )}
 
       </main>
+
+      {editingIdx !== null && cards[editingIdx] && (
+        <CropEditor
+          photoUrl={`/api/proxy-photo?url=${encodeURIComponent(cards[editingIdx].participant.photo_url)}`}
+          frameW={layoutObj?.photo?.width  ?? 220}
+          frameH={layoutObj?.photo?.height ?? 220}
+          participantName={cards[editingIdx].participant.name}
+          onConfirm={handleRegenCard}
+          onCancel={() => setEditingIdx(null)}
+        />
+      )}
     </div>
   );
 }
