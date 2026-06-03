@@ -59,7 +59,7 @@ export async function fetchWeekAttendance(
 ): Promise<AttendanceRecord[]> {
   const { data, error } = await supabase
     .from('attendance')
-    .select('id, participant_id, family_id, scanned_at, users(full_name), families(name)')
+    .select('id, participant_id, family_id, scanned_at, users!attendance_participant_id_fkey(full_name), families(name)')
     .eq('week_id', weekId)
     .eq('marathon_id', marathonId)
     .order('family_id', { ascending: true })
@@ -78,41 +78,32 @@ export async function fetchWeekAttendance(
 }
 
 export async function fetchFamilyAttendanceStats(
-  weekId: number,
   marathonId: number,
+  attendees: AttendanceRecord[],
 ): Promise<FamilyAttendanceStat[]> {
-  const { data: families } = await supabase
-    .from('families')
-    .select('id, name')
-    .eq('marathon_id', marathonId)
-    .order('name');
+  const [{ data: families }, { data: participants }] = await Promise.all([
+    supabase.from('families').select('id, name').eq('marathon_id', marathonId).order('name'),
+    supabase.from('users').select('family_id').eq('role', 'participant'),
+  ]);
 
-  if (!families || families.length === 0) return [];
+  if (!families) return [];
 
-  const stats = await Promise.all(
-    families.map(async (f) => {
-      const [{ count: present }, { count: total }] = await Promise.all([
-        supabase
-          .from('attendance')
-          .select('*', { count: 'exact', head: true })
-          .eq('week_id', weekId)
-          .eq('family_id', f.id),
-        supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .eq('family_id', f.id)
-          .eq('role', 'participant'),
-      ]);
-      return {
-        familyId: f.id,
-        familyName: f.name,
-        present: present ?? 0,
-        total: total ?? 0,
-      };
-    })
-  );
+  const presentByFamily = attendees.reduce<Record<number, number>>((acc, r) => {
+    acc[r.family_id] = (acc[r.family_id] ?? 0) + 1;
+    return acc;
+  }, {});
 
-  return stats;
+  const totalByFamily = (participants ?? []).reduce<Record<number, number>>((acc, r) => {
+    acc[r.family_id] = (acc[r.family_id] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return families.map(f => ({
+    familyId: f.id,
+    familyName: f.name,
+    present: presentByFamily[f.id] ?? 0,
+    total: totalByFamily[f.id] ?? 0,
+  }));
 }
 
 export async function refreshFamilyScore(
@@ -186,6 +177,7 @@ export async function recordAttendance(
     marathon_id: marathonId,
     family_id: familyId,
     scanned_by: scannedBy,
+    attended: true,
   });
 
   if (error) {

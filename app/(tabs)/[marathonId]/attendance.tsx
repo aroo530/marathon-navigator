@@ -1,4 +1,5 @@
 import { Header } from '@/components/Header';
+import { logger } from '@/utils/logger';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { useMarathon } from '@/context/MarathonContext';
@@ -118,16 +119,16 @@ export default function AttendanceScreen() {
     }
     setLoading(true);
     try {
-      const [records, stats, ac] = await Promise.all([
+      const [records, ac] = await Promise.all([
         fetchWeekAttendance(selectedWeekId, currentMarathonId),
-        fetchFamilyAttendanceStats(selectedWeekId, currentMarathonId),
         fetchAttendanceChallengeForWeek(currentMarathonId, selectedWeekId),
       ]);
+      const stats = await fetchFamilyAttendanceStats(currentMarathonId, records);
       setAttendees(records);
       setFamilyStats(stats);
       setAttendanceChallenge(ac);
-    } catch {
-      // silently fail
+    } catch (e) {
+      logger.error('loadAttendanceData failed', e);
     } finally {
       setLoading(false);
     }
@@ -458,8 +459,8 @@ export default function AttendanceScreen() {
           }}
           renderItem={({ item }) => (
             <View style={styles.attendeeRow}>
-              <View style={styles.attendeeAvatar}>
-                <Text style={[styles.attendeeInitial, { color: marathonTheme.primary }]}>
+              <View style={[styles.attendeeAvatar, { backgroundColor: marathonTheme.primary }]}>
+                <Text style={styles.attendeeInitial}>
                   {item.participant_name.charAt(0).toUpperCase()}
                 </Text>
               </View>
@@ -653,30 +654,52 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.xs,
     backgroundColor: Colors.light.cardBackground,
-    borderRadius: BorderRadius.medium,
+    borderRadius: BorderRadius.large,
     borderWidth: 1,
     borderColor: Colors.light.cardBorder,
     gap: Spacing.sm,
+    ...Platform.select({
+      ios: { shadowColor: Colors.light.cardShadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
+      android: { elevation: 1 },
+    }),
   } as ViewStyle,
   attendeeAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.light.background,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.cardBorder,
   } as ViewStyle,
-  attendeeInitial: { fontSize: Font.sizes.body, fontWeight: '700' } as TextStyle,
+  attendeeInitial: { fontSize: Font.sizes.body, fontWeight: '800', color: Colors.white } as TextStyle,
   attendeeInfo: { flex: 1 } as ViewStyle,
   attendeeName: { fontSize: Font.sizes.body, fontWeight: '600', color: Colors.light.textPrimary } as TextStyle,
   attendeeMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: 2 } as ViewStyle,
   familyBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 } as ViewStyle,
   familyBadgeText: { fontSize: 10, fontWeight: '600' } as TextStyle,
-  familySectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: 6, marginTop: 8, borderRadius: 6 } as ViewStyle,
-  familySectionTitle: { fontSize: 13, fontWeight: '700' } as TextStyle,
-  familySectionCount: { fontSize: 12, fontWeight: '600' } as TextStyle,
+  familySectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    borderRadius: BorderRadius.medium,
+  } as ViewStyle,
+  familySectionTitle: {
+    fontSize: Font.sizes.body,
+    fontWeight: '700',
+  } as TextStyle,
+  familySectionCount: {
+    fontSize: Font.sizes.caption,
+    fontWeight: '700',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.12)',
+  } as TextStyle,
   attendeeTime: { fontSize: Font.sizes.caption, color: Colors.light.textSecondary } as TextStyle,
 
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: Spacing.md } as ViewStyle,
