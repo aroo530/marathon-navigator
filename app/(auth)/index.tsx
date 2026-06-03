@@ -20,19 +20,19 @@ import {
 export default function SignInScreen() {
   const { t, i18n } = useTranslation();
   const { signIn } = useAuth();
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = async () => {
-    if (!phone || !password) {
+    if (!email || !password) {
       Alert.alert(t('auth.error', 'Error'), t('auth.fillAllFields', 'Please fill in all fields'));
       return;
     }
 
     try {
       setIsLoading(true);
-      await signIn(phone, password);
+      await signIn(email, password);
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert(
@@ -69,11 +69,12 @@ export default function SignInScreen() {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder={t('auth.phoneNumber', 'Phone number')}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            autoComplete="tel"
+            placeholder={t('auth.email', 'Email')}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoComplete="email"
+            autoCapitalize="none"
             placeholderTextColor={Colors.light.textSecondary}
           />
           <TextInput

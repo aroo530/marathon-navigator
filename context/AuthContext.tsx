@@ -3,18 +3,11 @@ import { UserProfile, getUserProfile } from '@/services/userService';
 import { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const PHONE_EMAIL_DOMAIN = 'marathonnavigator.app';
-
-function phoneToEmail(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  return `${digits}@${PHONE_EMAIL_DOMAIN}`;
-}
-
 type AuthContextType = {
   session: Session | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
-  signIn: (phone: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -57,10 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = async (phone: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const email = phoneToEmail(phone);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } finally {
