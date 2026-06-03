@@ -190,6 +190,11 @@
     "removeTitle": "Remove Attendance",
     "removeConfirm": "Remove attendance for {{name}}?",
     "removeFailed": "Failed to remove attendance",
+    "markManually": "Mark Manually",
+    "manualTitle": "Mark Attendance",
+    "searchPlaceholder": "Search by name",
+    "manualToggleFailed": "Failed to update attendance",
+    "noParticipants": "No participants found",
     "scanFeedback": {
       "queued": "✓ Accepted",
       "alreadyScanned": "Already scanned this session",

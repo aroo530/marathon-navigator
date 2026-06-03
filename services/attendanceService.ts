@@ -17,6 +17,13 @@ export type FamilyAttendanceStat = {
   total: number;
 };
 
+export type RosterParticipant = {
+  id: string;
+  full_name: string;
+  family_id: number;
+  family_name: string;
+};
+
 export type AttendanceChallenge = {
   challengeId: number;
   weekChallengeId: number;
@@ -103,6 +110,36 @@ export async function fetchFamilyAttendanceStats(
     familyName: f.name,
     present: presentByFamily[f.id] ?? 0,
     total: totalByFamily[f.id] ?? 0,
+  }));
+}
+
+export async function fetchMarathonRoster(
+  marathonId: number,
+): Promise<RosterParticipant[]> {
+  const { data: families } = await supabase
+    .from('families')
+    .select('id, name')
+    .eq('marathon_id', marathonId)
+    .order('name');
+
+  if (!families || families.length === 0) return [];
+
+  const { data: participants, error } = await supabase
+    .from('users')
+    .select('id, full_name, family_id')
+    .eq('role', 'participant')
+    .in('family_id', families.map(f => f.id))
+    .order('full_name');
+
+  if (error) throw error;
+
+  const nameById = new Map(families.map(f => [f.id, f.name]));
+
+  return (participants ?? []).map((p: any) => ({
+    id: p.id,
+    full_name: p.full_name ?? 'Unknown',
+    family_id: p.family_id,
+    family_name: nameById.get(p.family_id) ?? '',
   }));
 }
 

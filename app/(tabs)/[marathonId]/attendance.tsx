@@ -8,8 +8,10 @@ import {
   AttendanceChallenge,
   AttendanceRecord,
   FamilyAttendanceStat,
+  RosterParticipant,
   fetchAttendanceChallengeForWeek,
   fetchFamilyAttendanceStats,
+  fetchMarathonRoster,
   fetchWeekAttendance,
   recordAttendance,
   refreshFamilyScore,
@@ -33,6 +35,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TextStyle,
   TouchableOpacity,
   View,
@@ -72,6 +75,14 @@ export default function AttendanceScreen() {
   const [sessionScanCount, setSessionScanCount] = useState(0);
   const [lastScannedPerson, setLastScannedPerson] = useState<{ name: string; team: string } | null>(null);
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+
+  // Manual attendance mode
+  const [manualVisible, setManualVisible] = useState(false);
+  const [roster, setRoster] = useState<RosterParticipant[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [familyFilter, setFamilyFilter] = useState<number | null>(null);
 
   // Refs for the scan queue (never causes re-renders)
   const lastScanRef = useRef({ data: '', time: 0 });
@@ -314,6 +325,70 @@ export default function AttendanceScreen() {
     }
   }
 
+  async function openManual() {
+    setSearch('');
+    setFamilyFilter(null);
+    setRosterLoading(true);
+    setManualVisible(true);
+    try {
+      const data = await fetchMarathonRoster(currentMarathonId);
+      setRoster(data);
+    } catch (e) {
+      logger.error('fetchMarathonRoster failed', e);
+    } finally {
+      setRosterLoading(false);
+    }
+  }
+
+  async function toggleManual(p: RosterParticipant) {
+    if (!selectedWeekId || togglingId) return;
+    const isPresent = attendees.some(a => a.participant_id === p.id);
+    setTogglingId(p.id);
+    try {
+      if (isPresent) {
+        await removeAttendance(p.id, selectedWeekId, p.family_id, attendanceChallenge);
+        setAttendees(prev => prev.filter(a => a.participant_id !== p.id));
+        setFamilyStats(prev =>
+          prev.map(s =>
+            s.familyId === p.family_id ? { ...s, present: Math.max(0, s.present - 1) } : s
+          )
+        );
+      } else {
+        const res = await recordAttendance(
+          p.id,
+          selectedWeekId,
+          currentMarathonId,
+          p.family_id,
+          session?.user?.id ?? '',
+          attendanceChallenge,
+        );
+        if (!res.alreadyRecorded) {
+          setAttendees(prev => [
+            ...prev,
+            {
+              id: Date.now() + Math.random(),
+              participant_id: p.id,
+              participant_name: p.full_name,
+              family_id: p.family_id,
+              family_name: p.family_name,
+              scanned_at: new Date().toISOString(),
+            },
+          ]);
+          setFamilyStats(prev =>
+            prev.map(s =>
+              s.familyId === p.family_id ? { ...s, present: s.present + 1 } : s
+            )
+          );
+        }
+      }
+    } catch (e) {
+      logger.error('toggleManual failed', e);
+      Alert.alert(t('common.error'), t('attendance.manualToggleFailed'));
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   const totalPresent = familyStats.reduce((sum, s) => sum + s.present, 0);
   const totalMembers = familyStats.reduce((sum, s) => sum + s.total, 0);
 
@@ -412,6 +487,19 @@ export default function AttendanceScreen() {
         >
           <Ionicons name="qr-code-outline" size={20} color={Colors.white} />
           <Text style={styles.scanButtonText}>{t('attendance.startScanning')}</Text>
+        </TouchableOpacity>
+      )}
+
+      {isAdminOrLeader && (
+        <TouchableOpacity
+          style={[styles.manualButton, { borderColor: marathonTheme.primary }]}
+          onPress={openManual}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="list-outline" size={20} color={marathonTheme.primary} />
+          <Text style={[styles.manualButtonText, { color: marathonTheme.primary }]}>
+            {t('attendance.markManually')}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -562,6 +650,132 @@ export default function AttendanceScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={manualVisible}
+        animationType="slide"
+        onRequestClose={() => setManualVisible(false)}
+      >
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <View style={styles.manualHeader}>
+            <Text style={[styles.manualTitle, { color: marathonTheme.shade }]}>
+              {t('attendance.manualTitle')}
+            </Text>
+            <TouchableOpacity
+              style={[styles.manualDoneButton, { backgroundColor: marathonTheme.primary }]}
+              onPress={() => setManualVisible(false)}
+            >
+              <Text style={styles.doneButtonText}>{t('attendance.done')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('attendance.searchPlaceholder')}
+            placeholderTextColor={Colors.light.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          {roster.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.familyFilterStrip}
+              style={styles.familyFilterContainer}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.weekButton,
+                  familyFilter === null && { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.primary },
+                ]}
+                onPress={() => setFamilyFilter(null)}
+              >
+                <Text style={[styles.weekButtonText, familyFilter === null && styles.selectedWeekText]}>
+                  {t('attendance.total')}
+                </Text>
+              </TouchableOpacity>
+              {familyStats.map(f => (
+                <TouchableOpacity
+                  key={f.familyId}
+                  style={[
+                    styles.weekButton,
+                    familyFilter === f.familyId && { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.primary },
+                  ]}
+                  onPress={() => setFamilyFilter(f.familyId)}
+                >
+                  <Text style={[styles.weekButtonText, familyFilter === f.familyId && styles.selectedWeekText]}>
+                    {f.familyName}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {rosterLoading ? (
+            <ActivityIndicator size="large" color={marathonTheme.primary} style={styles.loader} />
+          ) : (
+            <SectionList
+              sections={Object.entries(
+                roster
+                  .filter(p =>
+                    (familyFilter === null || p.family_id === familyFilter) &&
+                    p.full_name.toLowerCase().includes(search.trim().toLowerCase())
+                  )
+                  .reduce<Record<string, RosterParticipant[]>>((acc, p) => {
+                    const key = p.family_name || 'Unknown';
+                    (acc[key] = acc[key] ?? []).push(p);
+                    return acc;
+                  }, {})
+              ).map(([family, data]) => ({ family, data }))}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              renderSectionHeader={({ section }) => (
+                <View style={[styles.familySectionHeader, { backgroundColor: marathonTheme.tint }]}>
+                  <Text style={[styles.familySectionTitle, { color: marathonTheme.shade }]}>
+                    {section.family}
+                  </Text>
+                </View>
+              )}
+              renderItem={({ item }) => {
+                const isPresent = attendees.some(a => a.participant_id === item.id);
+                return (
+                  <TouchableOpacity
+                    style={styles.rosterRow}
+                    onPress={() => toggleManual(item)}
+                    disabled={!!togglingId}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.attendeeName}>{item.full_name}</Text>
+                    {togglingId === item.id ? (
+                      <ActivityIndicator size="small" color={marathonTheme.primary} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.rosterCheck,
+                          isPresent && { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.primary },
+                        ]}
+                      >
+                        {isPresent && <Ionicons name="checkmark" size={16} color={Colors.white} />}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Ionicons name="people-outline" size={48} color={Colors.light.textSecondary} />
+                  <Text style={styles.emptyText}>{t('attendance.noParticipants')}</Text>
+                </View>
+              }
+            />
+          )}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -636,6 +850,73 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   } as ViewStyle,
   scanButtonText: { color: Colors.white, fontSize: Font.sizes.body, fontWeight: '700' } as TextStyle,
+
+  manualButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: Spacing.md,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.medium,
+    borderWidth: 1.5,
+    backgroundColor: Colors.light.cardBackground,
+    gap: Spacing.sm,
+  } as ViewStyle,
+  manualButtonText: { fontSize: Font.sizes.body, fontWeight: '700' } as TextStyle,
+
+  manualHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  } as ViewStyle,
+  manualTitle: { fontSize: Font.sizes.h2, fontWeight: '800' } as TextStyle,
+  manualDoneButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.medium,
+  } as ViewStyle,
+  familyFilterContainer: { flexGrow: 0, flexShrink: 0, marginBottom: Spacing.sm } as ViewStyle,
+  familyFilterStrip: { paddingHorizontal: Spacing.md, gap: Spacing.sm, alignItems: 'center' } as ViewStyle,
+  searchInput: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: BorderRadius.medium,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    fontSize: Font.sizes.body,
+    color: Colors.light.textPrimary,
+  } as TextStyle,
+  rosterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.xs,
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: BorderRadius.large,
+    borderWidth: 1,
+    borderColor: Colors.light.cardBorder,
+    gap: Spacing.sm,
+  } as ViewStyle,
+  rosterCheck: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: Colors.light.cardBorder,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
 
   sectionTitle: {
     fontSize: Font.sizes.caption,

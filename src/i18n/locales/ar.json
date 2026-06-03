@@ -190,6 +190,11 @@
     "removeTitle": "إزالة الحضور",
     "removeConfirm": "إزالة حضور {{name}}؟",
     "removeFailed": "فشل في إزالة الحضور",
+    "markManually": "تسجيل يدوي",
+    "manualTitle": "تسجيل الحضور",
+    "searchPlaceholder": "ابحث بالاسم",
+    "manualToggleFailed": "فشل تحديث الحضور",
+    "noParticipants": "لا يوجد مشاركون",
     "scanFeedback": {
       "queued": "✓ مقبول",
       "alreadyScanned": "تم مسحه في هذه الجلسة",
