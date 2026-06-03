@@ -22,7 +22,14 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Marathon Navigator",
+      "shortName": "Marathon",
+      "description": "Track your marathon progress, attendance, and challenges",
+      "themeColor": "#46178f",
+      "backgroundColor": "#f8f8f8",
+      "display": "standalone",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",

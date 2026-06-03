@@ -2,11 +2,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
+import { applyRTL } from '@/utils/applyRTL';
+import { restartApp } from '@/utils/restartApp';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { I18nManager } from 'react-native';
-import RNRestart from 'react-native-restart';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -46,14 +46,14 @@ export default function SignInScreen() {
 
   const toggleLanguage = async () => {
     const nextLang = i18n.language === 'en' ? 'ar' : 'en';
-    const isRTL = nextLang === 'ar';
     await i18n.changeLanguage(nextLang);
-    if (I18nManager.isRTL !== isRTL) {
-      I18nManager.forceRTL(isRTL);
-      I18nManager.allowRTL(isRTL);
-      Alert.alert(t('common.restartTitle', 'Restart required'), t('common.restartMessage', 'The app will restart to apply language changes.'), [
-        { text: 'OK', onPress: () => RNRestart.Restart() },
-      ]);
+    applyRTL(nextLang);
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        t('common.restartTitle', 'Restart required'),
+        t('common.restartMessage', 'The app will restart to apply language changes.'),
+        [{ text: 'OK', onPress: () => restartApp() }],
+      );
     }
   };
 
