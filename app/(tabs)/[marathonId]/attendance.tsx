@@ -26,7 +26,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList,
+  SectionList,
   Modal,
   Platform,
   ScrollView,
@@ -70,6 +70,7 @@ export default function AttendanceScreen() {
   // Counter shown in the scanner overlay — increments immediately on each accepted scan
   const [sessionScanCount, setSessionScanCount] = useState(0);
   const [lastScannedPerson, setLastScannedPerson] = useState<{ name: string; team: string } | null>(null);
+  const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
 
   // Refs for the scan queue (never causes re-renders)
   const lastScanRef = useRef({ data: '', time: 0 });
@@ -291,36 +292,25 @@ export default function AttendanceScreen() {
     loadAttendanceData();
   }
 
-  function handleRemoveAttendee(record: AttendanceRecord) {
-    Alert.alert(
-      t('attendance.removeTitle'),
-      t('attendance.removeConfirm', { name: record.participant_name }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('attendance.remove'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await removeAttendance(
-                record.participant_id,
-                selectedWeekId!,
-                record.family_id,
-                attendanceChallenge,
-              );
-              setAttendees(prev => prev.filter(a => a.id !== record.id));
-              setFamilyStats(prev =>
-                prev.map(s =>
-                  s.familyId === record.family_id ? { ...s, present: Math.max(0, s.present - 1) } : s
-                )
-              );
-            } catch {
-              Alert.alert(t('common.error'), t('attendance.removeFailed'));
-            }
-          },
-        },
-      ],
-    );
+  async function confirmRemoveAttendee(record: AttendanceRecord) {
+    try {
+      await removeAttendance(
+        record.participant_id,
+        selectedWeekId!,
+        record.family_id,
+        attendanceChallenge,
+      );
+      setAttendees(prev => prev.filter(a => a.id !== record.id));
+      setFamilyStats(prev =>
+        prev.map(s =>
+          s.familyId === record.family_id ? { ...s, present: Math.max(0, s.present - 1) } : s
+        )
+      );
+    } catch {
+      Alert.alert(t('common.error'), t('attendance.removeFailed'));
+    } finally {
+      setPendingRemoveId(null);
+    }
   }
 
   const totalPresent = familyStats.reduce((sum, s) => sum + s.present, 0);
@@ -439,12 +429,33 @@ export default function AttendanceScreen() {
       {loading ? (
         <ActivityIndicator size="large" color={marathonTheme.primary} style={styles.loader} />
       ) : (
-        <FlatList
-          data={attendees}
+        <SectionList
+          sections={Object.entries(
+            attendees.reduce<Record<string, AttendanceRecord[]>>((acc, r) => {
+              const key = r.family_name || 'Unknown';
+              (acc[key] = acc[key] ?? []).push(r);
+              return acc;
+            }, {})
+          ).map(([family, data]) => ({ family, data }))}
           keyExtractor={item => String(item.id)}
           ListHeaderComponent={renderHeader}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          renderSectionHeader={({ section }) => {
+            const stat = familyStats.find(s => s.familyName === section.family);
+            return (
+              <View style={[styles.familySectionHeader, { backgroundColor: marathonTheme.tint }]}>
+                <Text style={[styles.familySectionTitle, { color: marathonTheme.shade }]}>
+                  {section.family}
+                </Text>
+                {stat && (
+                  <Text style={[styles.familySectionCount, { color: marathonTheme.shade }]}>
+                    {stat.present} / {stat.total}
+                  </Text>
+                )}
+              </View>
+            );
+          }}
           renderItem={({ item }) => (
             <View style={styles.attendeeRow}>
               <View style={styles.attendeeAvatar}>
@@ -454,29 +465,28 @@ export default function AttendanceScreen() {
               </View>
               <View style={styles.attendeeInfo}>
                 <Text style={styles.attendeeName}>{item.participant_name}</Text>
-                <View style={styles.attendeeMeta}>
-                  {item.family_name ? (
-                    <View style={[styles.familyBadge, { backgroundColor: marathonTheme.tint }]}>
-                      <Text style={[styles.familyBadgeText, { color: marathonTheme.shade }]}>
-                        {item.family_name}
-                      </Text>
-                    </View>
-                  ) : null}
-                  <Text style={styles.attendeeTime}>
-                    {new Date(item.scanned_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
+                <Text style={styles.attendeeTime}>
+                  {new Date(item.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
               </View>
               {isAdminOrLeader && (
-                <TouchableOpacity
-                  onPress={() => handleRemoveAttendee(item)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="trash-outline" size={18} color={Colors.red[1]} />
-                </TouchableOpacity>
+                pendingRemoveId === item.id ? (
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity onPress={() => confirmRemoveAttendee(item)}
+                      style={{ backgroundColor: Colors.red[1], borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{t('attendance.remove', 'Remove')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setPendingRemoveId(null)}
+                      style={{ borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ fontSize: 12, color: Colors.light.textSecondary }}>{t('common.cancel', 'Cancel')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity onPress={() => setPendingRemoveId(item.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="trash-outline" size={18} color={Colors.red[1]} />
+                  </TouchableOpacity>
+                )
               )}
             </View>
           )}
@@ -664,6 +674,9 @@ const styles = StyleSheet.create({
   attendeeMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: 2 } as ViewStyle,
   familyBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 } as ViewStyle,
   familyBadgeText: { fontSize: 10, fontWeight: '600' } as TextStyle,
+  familySectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: 6, marginTop: 8, borderRadius: 6 } as ViewStyle,
+  familySectionTitle: { fontSize: 13, fontWeight: '700' } as TextStyle,
+  familySectionCount: { fontSize: 12, fontWeight: '600' } as TextStyle,
   attendeeTime: { fontSize: Font.sizes.caption, color: Colors.light.textSecondary } as TextStyle,
 
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: Spacing.md } as ViewStyle,
