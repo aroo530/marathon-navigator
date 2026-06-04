@@ -62,12 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error && error.code !== 'session_not_found') throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    await supabase.auth.signOut().catch(() => {});
+    // Force-clear local state in case the server returned an error
+    // and the client didn't fire SIGNED_OUT (e.g. 403 session_not_found)
+    setSession(null);
+    setUserProfile(null);
+    setIsLoading(false);
   };
 
   return (
