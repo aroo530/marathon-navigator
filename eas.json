@@ -15,7 +15,8 @@
       "android": {
         "buildType": "apk",
         "env": {
-          "ANDROID_SDK_ROOT": "/Users/arsanymilad/Library/Android/sdk"
+          "ANDROID_SDK_ROOT": "/Users/arsanymilad/Library/Android/sdk",
+          "ANDROID_NDK_HOME": "/Users/arsanymilad/Library/Android/sdk/ndk/27.1.12297006"
         }
       },
       "autoIncrement": true
