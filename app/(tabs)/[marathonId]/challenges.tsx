@@ -707,15 +707,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   weekSelectorContainer: {
-    width: '100%',
-    flexGrow: 0,            // prevent ScrollView from stretching vertically
+    flexGrow: 0,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.cardBorder,
   },
   weekSelector: {
-    width: '100%',
     flexDirection: 'row',
-    justifyContent: 'space-around',
     padding: Spacing.md,
     backgroundColor: Colors.white,
   },
