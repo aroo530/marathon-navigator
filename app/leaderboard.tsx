@@ -22,10 +22,24 @@ type Family = {
   totalpoints: number;
 };
 
-type Marathon = { id: number; title: string };
+type Marathon = { id: number; title: string; accent_color: string | null };
 
-const PRIMARY = Colors.purple[2];
-const TINT = Colors.purple[0];
+const DEFAULT_COLOR = '#46178F';
+
+function lin(c: number) {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+function deriveColors(hex: string) {
+  const clean = hex.replace('#', '');
+  const full = clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean;
+  const n = parseInt(full, 16);
+  const [r, g, b] = [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+  const tint = '#' + [r, g, b].map(v => Math.round(v + (255 - v) * 0.45).toString(16).padStart(2, '0')).join('');
+  const lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return { primary: hex, tint, onPrimary: lum > 0.179 ? '#000000' : '#FFFFFF' };
+}
 
 export default function PublicLeaderboardScreen() {
   const [marathon, setMarathon] = useState<Marathon | null>(null);
@@ -33,6 +47,8 @@ export default function PublicLeaderboardScreen() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const theme = deriveColors(marathon?.accent_color ?? DEFAULT_COLOR);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -60,7 +76,7 @@ export default function PublicLeaderboardScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={PRIMARY} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -73,22 +89,25 @@ export default function PublicLeaderboardScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => load(true)}
-          tintColor={PRIMARY}
-          colors={[PRIMARY]}
+          tintColor={theme.primary}
+          colors={[theme.primary]}
         />
       }
     >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{marathon?.title ?? 'Leaderboard'}</Text>
-        <Text style={styles.headerSub}>Family Rankings</Text>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
+        <Text style={[styles.headerTitle, { color: theme.onPrimary }]}>
+          {marathon?.title ?? 'Leaderboard'}
+        </Text>
+        <Text style={[styles.headerSub, { color: theme.tint }]}>Family Rankings</Text>
       </View>
 
       {/* Rankings table */}
       <View style={styles.card}>
-        <View style={styles.tableHead}>
+        <View style={[styles.tableHead, { backgroundColor: theme.primary }]}>
           <Text style={[styles.colRank, styles.headText]}>#</Text>
-          <Text style={[styles.colFamily, styles.headText]}>Family</Text>
-          <Text style={[styles.colPoints, styles.headText]}>Points</Text>
+          <Text style={[styles.colFamilyText, styles.headText]}>Family</Text>
+          <Text style={[styles.colPointsText, styles.headText]}>Points</Text>
         </View>
         {families.length === 0 ? (
           <Text style={styles.empty}>No scores yet</Text>
@@ -96,19 +115,23 @@ export default function PublicLeaderboardScreen() {
           families.map((f, i) => (
             <View
               key={f.id}
-              style={[styles.tableRow, i % 2 === 1 && { backgroundColor: TINT }]}
+              style={[styles.tableRow, i % 2 === 1 && { backgroundColor: theme.tint }]}
             >
-              <Text style={[styles.colRank, styles.rankText]}>{i + 1}</Text>
-              <View style={styles.colFamily}>
+              <Text style={[styles.colRank, styles.rankText, { color: theme.primary }]}>
+                {i + 1}
+              </Text>
+              <View style={styles.colFamilyRow}>
                 {f.avatarurl ? (
-                <Image source={{ uri: f.avatarurl }} style={styles.avatar} />
-              ) : (
-                <Text style={styles.familyEmoji}>👨‍👩‍👧‍👦</Text>
-              )}
+                  <Image source={{ uri: f.avatarurl }} style={styles.avatar} />
+                ) : (
+                  <Text style={styles.familyEmoji}>👨‍👩‍👧‍👦</Text>
+                )}
                 <Text style={styles.familyName}>{f.name}</Text>
               </View>
-              <View style={styles.colPoints}>
-                <Text style={styles.pointsBadge}>{f.totalpoints}</Text>
+              <View style={styles.colPointsCell}>
+                <Text style={[styles.pointsBadge, { color: theme.primary, backgroundColor: theme.tint }]}>
+                  {f.totalpoints}
+                </Text>
               </View>
             </View>
           ))
@@ -116,9 +139,9 @@ export default function PublicLeaderboardScreen() {
       </View>
 
       {/* Recent activity */}
-      <View style={[styles.sectionHead, { backgroundColor: PRIMARY }]}>
-        <Text style={styles.sectionHeadTitle}>Recent Activity</Text>
-        <Text style={styles.sectionHeadSub}>Latest submissions</Text>
+      <View style={[styles.sectionHead, { backgroundColor: theme.primary }]}>
+        <Text style={[styles.sectionHeadTitle, { color: theme.onPrimary }]}>Recent Activity</Text>
+        <Text style={[styles.sectionHeadSub, { color: theme.tint }]}>Latest submissions</Text>
       </View>
 
       {logs.length === 0 ? (
@@ -132,7 +155,7 @@ export default function PublicLeaderboardScreen() {
             </View>
             <Text style={styles.logChallenge} numberOfLines={2}>{log.challenge_title}</Text>
             <View style={styles.logBottom}>
-              <Text style={[styles.weekChip, { color: PRIMARY, backgroundColor: TINT }]}>
+              <Text style={[styles.weekChip, { color: theme.primary, backgroundColor: theme.tint }]}>
                 Week {log.week_number}
               </Text>
               <Text style={styles.logDate}>
@@ -165,19 +188,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    backgroundColor: PRIMARY,
     padding: Spacing.lg,
     paddingTop: Spacing.xl,
   },
   headerTitle: {
     fontSize: Font.sizes.h1,
     fontWeight: '700',
-    color: Colors.white,
     marginBottom: 4,
   },
   headerSub: {
     fontSize: Font.sizes.body,
-    color: Colors.purple[0],
   },
   card: {
     backgroundColor: Colors.white,
@@ -190,7 +210,6 @@ const styles = StyleSheet.create({
   tableHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: PRIMARY,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
   },
@@ -212,20 +231,26 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'center',
   },
-  colFamily: {
+  colFamilyText: {
+    flex: 1,
+    paddingHorizontal: Spacing.sm,
+  },
+  colPointsText: {
+    width: 72,
+  },
+  colFamilyRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.sm,
   },
-  colPoints: {
+  colPointsCell: {
     width: 72,
     alignItems: 'center',
   },
   rankText: {
     fontSize: Font.sizes.body,
     fontWeight: '700',
-    color: PRIMARY,
   },
   avatar: {
     width: 40,
@@ -246,8 +271,6 @@ const styles = StyleSheet.create({
   pointsBadge: {
     fontSize: Font.sizes.body,
     fontWeight: '700',
-    color: PRIMARY,
-    backgroundColor: TINT,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.medium,
@@ -262,11 +285,9 @@ const styles = StyleSheet.create({
   sectionHeadTitle: {
     fontSize: Font.sizes.h2,
     fontWeight: '700',
-    color: Colors.white,
   },
   sectionHeadSub: {
     fontSize: Font.sizes.caption,
-    color: Colors.orange[0],
     marginTop: 2,
   },
   logCard: {
