@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error && error.code !== 'session_not_found') throw error;
     } finally {
       setIsLoading(false);
     }
