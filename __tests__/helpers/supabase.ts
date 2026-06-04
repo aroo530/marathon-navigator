@@ -12,15 +12,20 @@ export const supabaseMock = supabase as unknown as { from: jest.Mock; rpc: jest.
  */
 export function makeChain(result: { data: unknown; error: unknown }) {
   const chain: Record<string, jest.Mock> & { then: PromiseLike<unknown>['then'] } = {
-    select: jest.fn().mockReturnThis(),
-    eq:     jest.fn().mockReturnThis(),
-    neq:    jest.fn().mockReturnThis(),
-    order:  jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue(result),
-    then:   (resolve: any, reject: any) =>
+    select:      jest.fn().mockReturnThis(),
+    eq:          jest.fn().mockReturnThis(),
+    neq:         jest.fn().mockReturnThis(),
+    is:          jest.fn().mockReturnThis(),
+    in:          jest.fn().mockReturnThis(),
+    order:       jest.fn().mockReturnThis(),
+    limit:       jest.fn().mockReturnThis(),
+    insert:      jest.fn().mockReturnThis(),
+    update:      jest.fn().mockReturnThis(),
+    delete:      jest.fn().mockReturnThis(),
+    upsert:      jest.fn().mockReturnThis(),
+    single:      jest.fn().mockResolvedValue(result),
+    maybeSingle: jest.fn().mockResolvedValue(result),
+    then:        (resolve: any, reject: any) =>
       Promise.resolve(result).then(resolve, reject),
   } as any;
   return chain;
