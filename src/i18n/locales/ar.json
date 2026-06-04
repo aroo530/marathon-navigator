@@ -20,7 +20,15 @@
     "noChallenges": "مفيش تحديات للأسبوع ده",
     "locked": "مقفول",
     "lockedTitle": "التحدي مقفول",
-    "lockedMessage": "التحدي ده بيتولاه {{owner}}"
+    "lockedMessage": "التحدي ده بيتولاه {{owner}}",
+    "completeChallenge": "إتمام التحدي",
+    "howManyCompleted": "كام فرد من الكتيبة عمل التحدي ده؟",
+    "enterPoints": "ادخل الدرجات للتحدي ده",
+    "maxPoints": "أقصى درجات متاحة:",
+    "noPermission": "مش عندك صلاحية تعدل التحدي ده.",
+    "invalidCount": "ادخل رقم بين 0 و {{max}}",
+    "invalidPoints": "ادخل رقم بين 0 و {{max}}",
+    "submitFailed": "فشل في تسجيل الدرجة"
   },
   "common": {
     "welcome": "أهلاً",
@@ -32,7 +40,12 @@
     "restartTitle": "محتاجين نعيد التشغيل",
     "restartMessage": "التطبيق محتاج يتقفل ويتفتح تاني عشان اللغة تشتغل صح.",
     "error": "غلط",
-    "retry": "حاول تاني"
+    "retry": "حاول تاني",
+    "cancel": "إلغاء",
+    "ok": "تمام",
+    "submit": "تسجيل",
+    "delete": "حذف",
+    "accessDenied": "مش مسموح"
   },
   "tabs": {
     "overview": "نظرة سريعة",

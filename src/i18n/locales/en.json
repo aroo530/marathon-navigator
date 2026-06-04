@@ -19,7 +19,15 @@
     "noChallenges": "No challenges for this week",
     "locked": "Locked",
     "lockedTitle": "Challenge Locked",
-    "lockedMessage": "This challenge is managed by {{owner}}"
+    "lockedMessage": "This challenge is managed by {{owner}}",
+    "completeChallenge": "Complete Challenge",
+    "howManyCompleted": "How many family members completed this challenge?",
+    "enterPoints": "Enter points for this challenge",
+    "maxPoints": "Maximum points available:",
+    "noPermission": "You do not have permission to edit this challenge.",
+    "invalidCount": "Please enter a number between 0 and {{max}}",
+    "invalidPoints": "Please enter a number between 0 and {{max}}",
+    "submitFailed": "Failed to submit score"
   },
   "common": {
     "welcome": "Welcome",
