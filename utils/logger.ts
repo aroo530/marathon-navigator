@@ -1,12 +1,25 @@
 import * as Sentry from '@sentry/react-native';
 
-const noop = () => {};
 
 export const logger = __DEV__
   ? { log: console.log, warn: console.warn, error: console.error }
   : {
-      log:   noop,
-      warn:  noop,
+      log: (message: string, ...args: unknown[]) => {
+        Sentry.addBreadcrumb({
+          category: 'app',
+          message,
+          data: args.length ? { detail: args } : undefined,
+          level: 'info',
+        });
+      },
+      warn: (message: string, ...args: unknown[]) => {
+        Sentry.addBreadcrumb({
+          category: 'app',
+          message,
+          data: args.length ? { detail: args } : undefined,
+          level: 'warning',
+        });
+      },
       error: (message: string, ...args: unknown[]) => {
         Sentry.captureMessage(message, {
           level: 'error',

@@ -84,6 +84,10 @@ export default function AttendanceScreen() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [familyFilter, setFamilyFilter] = useState<number | null>(null);
 
+  // Debug counters — visible overlay so we know if onBarcodeScanned fires at all
+  const [rawScanFires, setRawScanFires] = useState(0);
+  const [lastRawData, setLastRawData] = useState('');
+
   // Refs for the scan queue (never causes re-renders)
   const lastScanRef = useRef({ data: '', time: 0 });
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -222,13 +226,22 @@ export default function AttendanceScreen() {
 
   // Camera callback — purely synchronous, never awaits
   const handleBarcodeScanned = useCallback(({ data }: { data: string }) => {
+    // Track every raw fire — shown on-screen so we know if camera detection works at all
+    setRawScanFires(n => n + 1);
+    setLastRawData(data.slice(0, 60));
+    logger.log('[QR] onBarcodeScanned fired', { dataLen: data.length, preview: data.slice(0, 80) });
+
     const now = Date.now();
     // Debounce same QR (camera fires many times per second on the same code)
-    if (data === lastScanRef.current.data && now - lastScanRef.current.time < SAME_QR_DEBOUNCE_MS) return;
+    if (data === lastScanRef.current.data && now - lastScanRef.current.time < SAME_QR_DEBOUNCE_MS) {
+      logger.log('[QR] debounced — same QR within window');
+      return;
+    }
     lastScanRef.current = { data, time: now };
 
     // Client-side duplicate check (instant, no network)
     if (scannedQRSet.current.has(data)) {
+      logger.log('[QR] client-side duplicate, already in scannedQRSet');
       showFeedback(t('attendance.scanFeedback.alreadyScanned'), 'duplicate');
       return;
     }
@@ -237,7 +250,9 @@ export default function AttendanceScreen() {
     try {
       const parsed = JSON.parse(data);
       if (!parsed.pid || typeof parsed.pid !== 'string') throw new Error();
+      logger.log('[QR] parsed OK', { pid: parsed.pid, name: parsed.name });
     } catch {
+      logger.warn('[QR] JSON parse failed or missing pid field', { raw: data.slice(0, 120) });
       showFeedback(t('attendance.scanFeedback.invalidQR'), 'error');
       return;
     }
@@ -599,7 +614,11 @@ export default function AttendanceScreen() {
         <View style={styles.scannerContainer}>
           <CameraView
             style={StyleSheet.absoluteFill}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            facing="back"
+            active={scanning}
+            // barcodeScannerSettings with barcodeTypes can silently break iOS detection (expo issue #11726)
+            // Only set it on Android; iOS detects QR by default
+            barcodeScannerSettings={Platform.OS === 'android' ? { barcodeTypes: ['qr'] } : undefined}
             onBarcodeScanned={handleBarcodeScanned}
           />
 
@@ -641,6 +660,18 @@ export default function AttendanceScreen() {
               <View style={styles.feedbackPlaceholder} />
             )}
             <Text style={styles.scanHint}>{t('attendance.scanHint')}</Text>
+
+            {__DEV__ && (
+              <View style={styles.debugPanel}>
+                <Text style={styles.debugText}>
+                  cam fires: {rawScanFires}  |  {permission?.granted ? 'perm ✓' : 'no perm ✗'}
+                </Text>
+                {lastRawData ? (
+                  <Text style={styles.debugText} numberOfLines={2}>last: {lastRawData}</Text>
+                ) : null}
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.doneButton, { backgroundColor: marathonTheme.primary }]}
               onPress={handleDone}
@@ -1087,4 +1118,18 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.medium,
   } as ViewStyle,
   doneButtonText: { color: Colors.white, fontSize: Font.sizes.body, fontWeight: '700' } as TextStyle,
+  debugPanel: {
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,0,0.4)',
+  } as ViewStyle,
+  debugText: {
+    color: '#FFE66D',
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  } as TextStyle,
 });
