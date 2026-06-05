@@ -1,6 +1,7 @@
 // app/(tabs)/marathon/_layout.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaperProvider } from 'react-native-paper';
@@ -16,7 +17,7 @@ export default function MarathonLayout() {
   return (
     <PaperProvider>
       <Tabs screenOptions={{
-        animation: 'shift',
+        animation: Platform.OS === 'web' ? 'none' : 'shift',
         headerShown: false,
         tabBarActiveTintColor: marathonTheme.primary,
         tabBarInactiveTintColor: marathonTheme.shade,
