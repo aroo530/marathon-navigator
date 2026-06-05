@@ -114,9 +114,13 @@ export default function LeaderboardScreen() {
     }, [currentMarathonId])
   );
   const handleFamilyPress = async (family: Family) => {
-    const familyBreakdown = await getFamilyscoreBreakdownData(family.id, Number(currentMarathonId));
-    setSelectedFamily({ ...family, breakdown: familyBreakdown });
-    setModalVisible(true);
+    try {
+      const familyBreakdown = await getFamilyscoreBreakdownData(family.id, Number(currentMarathonId));
+      setSelectedFamily({ ...family, breakdown: familyBreakdown });
+      setModalVisible(true);
+    } catch (err) {
+      logger.error('Error loading family breakdown:', err);
+    }
   };
 
   // const formatTimeAgo = (dateString: string) => {
