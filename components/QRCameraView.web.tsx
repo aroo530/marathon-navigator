@@ -3,6 +3,10 @@ import React, { useEffect, useRef } from 'react';
 
 import type { QRCameraViewProps } from './QRCameraView';
 
+// Target camera resolution (capped to device max). 2K balances QR read range
+// against per-frame decode cost on mid-range Androids. Bump to 3840x2160 for 4K.
+const TARGET_RESOLUTION = { width: 2560, height: 1440 };
+
 /**
  * Web QR camera, backed by qr-scanner (nimiq). Uses the browser's native
  * BarcodeDetector API when available (Android Chrome) and falls back to a
@@ -51,16 +55,24 @@ export default function QRCameraView({ active, onScan, onError }: QRCameraViewPr
 
         // qr-scanner requests width:{min:1024} — a hard floor that can fail and
         // drop the stream to the browser default (often 640x480). Re-request a
-        // high `ideal` (soft) resolution so we get the device's best up to 1080p.
-        // More pixels per QR = locks on from farther away / tolerates more blur.
+        // high `ideal` (soft) resolution so we get the device's best up to the
+        // target. More pixels per QR = locks on from farther away / tolerates blur.
         const stream = video.srcObject as MediaStream | null;
         const track = stream?.getVideoTracks?.()[0];
         if (track) {
           try {
             const caps = track.getCapabilities?.();
             await track.applyConstraints({
-              width: { ideal: caps?.width?.max ? Math.min(caps.width.max, 1920) : 1920 },
-              height: { ideal: caps?.height?.max ? Math.min(caps.height.max, 1080) : 1080 },
+              width: {
+                ideal: caps?.width?.max
+                  ? Math.min(caps.width.max, TARGET_RESOLUTION.width)
+                  : TARGET_RESOLUTION.width,
+              },
+              height: {
+                ideal: caps?.height?.max
+                  ? Math.min(caps.height.max, TARGET_RESOLUTION.height)
+                  : TARGET_RESOLUTION.height,
+              },
             });
           } catch {
             /* device doesn't support applyConstraints — keep the default stream */
