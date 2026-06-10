@@ -535,7 +535,7 @@ export default function ChallengesScreen() {
                             </Text>
                           </View>
                           <View style={styles.actionButtons}>
-                            {challenge.points_awarded && editable && (
+                            {!!challenge.points_awarded && editable && (
                               <TouchableOpacity
                                 style={[
                                   styles.statusButton,
