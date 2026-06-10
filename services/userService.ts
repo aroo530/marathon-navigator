@@ -52,7 +52,7 @@ export async function fetchParticipantsByFamilyId(familyId: number): Promise<Par
 
 // Create a new participant
 export async function createParticipant(
-  email: string,
+  email: string | null,
   name: string,
   familyId: number
 ): Promise<void> {
@@ -60,7 +60,10 @@ export async function createParticipant(
     .from('users')
     .insert([
       {
-        email,
+        // Participants usually have no email. Insert NULL (not '') so the
+        // users_email_key unique constraint allows many emailless participants
+        // (Postgres treats NULLs as distinct, but '' as a single colliding value).
+        email: email?.trim() ? email.trim() : null,
         full_name: name,
         family_id: familyId,
         role: 'participant'

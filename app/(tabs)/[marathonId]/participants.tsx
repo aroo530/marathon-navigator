@@ -182,7 +182,7 @@ export default function ParticipantsScreen() {
                 if (!activeFamilyId) {
                     throw new Error('No family ID available');
                 }
-                await createParticipant('', formData.name, activeFamilyId);
+                await createParticipant(null, formData.name, activeFamilyId);
                 showToast('success', t('users.participantCreated'));
             } else if (modalMode === 'edit') {
                 if (!selectedParticipant?.id) {
