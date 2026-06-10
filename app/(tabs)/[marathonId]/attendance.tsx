@@ -21,7 +21,8 @@ import {
 import { fetchWeeksByMarathonId } from '@/services/marathonService';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
+import QRCameraView from '@/components/QRCameraView';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -275,8 +276,15 @@ export default function AttendanceScreen() {
     drainQueue();
   }, [t, showFeedback, drainQueue]);
 
+  function handleScannerError(e: unknown) {
+    logger.warn('[QR] scanner error', e);
+    showFeedback(t('attendance.cameraError', 'Unable to access camera'), 'error');
+  }
+
   async function openScanner() {
-    if (!permission?.granted) {
+    // Native uses expo-camera permissions. On web, qr-scanner's start() triggers
+    // the browser prompt and surfaces denial via onError (handleScannerError).
+    if (Platform.OS !== 'web' && !permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) return;
     }
@@ -612,14 +620,10 @@ export default function AttendanceScreen() {
         statusBarTranslucent
       >
         <View style={styles.scannerContainer}>
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            facing="back"
+          <QRCameraView
             active={scanning}
-            // barcodeScannerSettings with barcodeTypes can silently break iOS detection (expo issue #11726)
-            // Only set it on Android; iOS detects QR by default
-            barcodeScannerSettings={Platform.OS === 'android' ? { barcodeTypes: ['qr'] } : undefined}
-            onBarcodeScanned={handleBarcodeScanned}
+            onScan={(data) => handleBarcodeScanned({ data })}
+            onError={handleScannerError}
           />
 
           <View style={styles.overlayTop}>
