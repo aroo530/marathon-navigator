@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { useMarathon } from '@/context/MarathonContext';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import { fetchWeeksByMarathonId } from '@/services/marathonService';
 import {
   Tournament,
@@ -65,6 +66,7 @@ const ConfirmationModal = ({
   onCancel,
 }: ConfirmationModalProps) => {
   const { t } = useTranslation();
+  const marathonTheme = useMarathonTheme();
 
   if (!visible || !match || newWinnerId == null) return null;
   const currentWinnerName =
@@ -97,7 +99,7 @@ const ConfirmationModal = ({
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.modalButton, styles.confirmButton]}
+              style={[styles.modalButton, styles.confirmButton, { backgroundColor: marathonTheme.primary }]}
               onPress={onConfirm}
             >
               <ThemedText type="defaultSemiBold" style={styles.confirmButtonText}>
@@ -116,6 +118,7 @@ export default function TournamentScreen() {
   const insets = useSafeAreaInsets();
   const { marathonId: paramId } = useLocalSearchParams();
   const { selectedMarathon } = useMarathon();
+  const marathonTheme = useMarathonTheme();
   const currentMarathonId = Number(paramId ?? selectedMarathon?.id);
 
   const { userProfile } = useAuth();
@@ -270,7 +273,7 @@ export default function TournamentScreen() {
       <View key={match.match_id} style={styles.matchCard}>
         <View style={styles.versus}>
           <TouchableOpacity
-            style={[styles.teamButton, family1Won && styles.winnerTeam]}
+            style={[styles.teamButton, family1Won && [styles.winnerTeam, { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.shade }]]}
             disabled={!isAdmin}
             onPress={() => handleUpdateMatchResult(match, match.family1_id)}
           >
@@ -282,7 +285,7 @@ export default function TournamentScreen() {
             <Text style={styles.vsText}>{t('tournament.match.vs')}</Text>
           </View>
           <TouchableOpacity
-            style={[styles.teamButton, family2Won && styles.winnerTeam]}
+            style={[styles.teamButton, family2Won && [styles.winnerTeam, { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.shade }]]}
             disabled={!isAdmin}
             onPress={() => handleUpdateMatchResult(match, match.family2_id)}
           >
@@ -293,7 +296,7 @@ export default function TournamentScreen() {
         </View>
         {match.status === 'completed' && (
           <View style={styles.resultBadge}>
-            <Text style={styles.resultText}>
+            <Text style={[styles.resultText, { color: marathonTheme.shade }]}>
               {t('tournament.match.winner')}:{' '}
               {family1Won ? match.family1_name : match.family2_name}
             </Text>
@@ -333,12 +336,12 @@ export default function TournamentScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={Colors.purple[1]}
+              tintColor={marathonTheme.primary}
             />
           }
         >
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadTournament}>
+          <TouchableOpacity style={[styles.retryButton, { backgroundColor: marathonTheme.primary }]} onPress={loadTournament}>
             <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -361,7 +364,7 @@ export default function TournamentScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={Colors.purple[1]}
+              tintColor={marathonTheme.primary}
             />
           }
         >
@@ -400,8 +403,7 @@ export default function TournamentScreen() {
               key={w.week_number}
               style={[
                 styles.weekButton,
-                selectedWeek === w.week_number &&
-                styles.selectedWeekButton,
+                selectedWeek === w.week_number && [styles.selectedWeekButton, { backgroundColor: marathonTheme.primary, borderColor: marathonTheme.primary }],
               ]}
               onPress={() => setSelectedWeek(w.week_number)}
             >
@@ -420,7 +422,7 @@ export default function TournamentScreen() {
 
         {/* Matches */}
         <View style={styles.matchesContainer}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: marathonTheme.shade }]}>
             {t('tournament.week', { number: selectedWeek })} {t('tournament.matches')}
           </Text>
           {tournament.matches.length > 0 ? (
@@ -436,7 +438,7 @@ export default function TournamentScreen() {
 
         {/* Stats */}
         <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>{t('tournament.stats.title')}</Text>
+          <Text style={[styles.statsTitle, { color: marathonTheme.primary }]}>{t('tournament.stats.title')}</Text>
           <View style={styles.statsRow}>
             <Text style={styles.statLabel}>{t('tournament.stats.totalMatches')}:</Text>
             <Text style={styles.statValue}>

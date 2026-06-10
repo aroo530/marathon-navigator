@@ -149,21 +149,39 @@ describe('fetchMarathonChallenges', () => {
 });
 
 describe('fetchMarathonFamilies', () => {
-  it('returns family rows for the marathon', async () => {
-    const rows = [{ id: 1, name: 'Wolves' }];
-    const chain = makeChain({ data: rows, error: null });
-    supabaseMock.from.mockReturnValue(chain);
+  it('counts participants per family into member_count', async () => {
+    const familyRows = [
+      { id: 1, name: 'Wolves', marathon_id: 2 },
+      { id: 2, name: 'Hawks',  marathon_id: 2 },
+    ];
+    const userRows = [
+      { family_id: 1 }, { family_id: 1 }, { family_id: 1 }, // 3 in Wolves
+      { family_id: 2 },                                      // 1 in Hawks
+    ];
+    supabaseMock.from.mockImplementation((table: string) =>
+      makeChain({ data: table === 'families' ? familyRows : userRows, error: null })
+    );
 
     const result = await fetchMarathonFamilies(2);
 
-    expect(supabaseMock.from).toHaveBeenCalledWith('families');
-    expect(chain.eq).toHaveBeenCalledWith('marathon_id', 2);
-    expect(result).toEqual(rows);
+    expect(result[0].member_count).toBe(3);
+    expect(result[1].member_count).toBe(1);
   });
 
-  it('returns empty array when data is null', async () => {
-    const chain = makeChain({ data: null, error: null });
-    supabaseMock.from.mockReturnValue(chain);
+  it('defaults member_count to 0 for families with no participants', async () => {
+    const familyRows = [{ id: 1, name: 'Wolves', marathon_id: 2 }];
+    supabaseMock.from.mockImplementation((table: string) =>
+      makeChain({ data: table === 'families' ? familyRows : [], error: null })
+    );
+
+    const result = await fetchMarathonFamilies(2);
+    expect(result[0].member_count).toBe(0);
+  });
+
+  it('returns empty array when families data is null', async () => {
+    supabaseMock.from.mockImplementation((table: string) =>
+      makeChain({ data: table === 'families' ? null : [], error: null })
+    );
 
     const result = await fetchMarathonFamilies(2);
     expect(result).toEqual([]);

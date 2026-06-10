@@ -57,6 +57,7 @@ export type Family = {
     marathon_id: number;
     avatar_url?: string;
     cover_url?: string;
+    member_count?: number;
 };
 
 export type GameScoreEntry = {
@@ -197,18 +198,32 @@ export const fetchGameChallenges = async (marathonId: number): Promise<GameChall
  * Fetch all families for a specific marathon
  */
 export const fetchMarathonFamilies = async (marathonId: number): Promise<Family[]> => {
-    const { data, error } = await supabase
-        .from('families')
-        .select('id, name, marathon_id, avatar_url, cover_url')
-        .eq('marathon_id', marathonId)
-        .order('name');
+    const [familiesResult, countsResult] = await Promise.all([
+        supabase
+            .from('families')
+            .select('id, name, marathon_id, avatar_url, cover_url')
+            .eq('marathon_id', marathonId)
+            .order('name'),
+        supabase
+            .from('users')
+            .select('family_id')
+            .eq('role', 'participant'),
+    ]);
 
-    if (error) {
-        logger.error('Error fetching families:', error);
-        throw error;
+    if (familiesResult.error) {
+        logger.error('Error fetching families:', familiesResult.error);
+        throw familiesResult.error;
     }
 
-    return data || [];
+    const counts = new Map<number, number>();
+    for (const p of countsResult.data ?? []) {
+        counts.set(p.family_id, (counts.get(p.family_id) ?? 0) + 1);
+    }
+
+    return (familiesResult.data || []).map(f => ({
+        ...f,
+        member_count: counts.get(f.id) ?? 0,
+    }));
 };
 
 /**

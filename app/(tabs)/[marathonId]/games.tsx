@@ -4,7 +4,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BorderRadius, Colors, Font, Spacing } from '@/constants/Theme';
 import { useAuth } from "@/context/AuthContext";
-import { useMarathon } from '@/context/MarathonContext'; // Assuming path to your marathon hook
+import { useMarathon } from '@/context/MarathonContext';
+import { useMarathonTheme } from '@/hooks/useMarathonTheme';
 import * as challengeService from '@/services/challenges';
 import { Family, GameChallenge, GameScoreEntry, RecentGameEntry } from '@/services/challenges';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,7 @@ export default function Games() {
     const { marathonId } = useLocalSearchParams();
     const { selectedMarathon } = useMarathon();
     const { userProfile } = useAuth();
+    const marathonTheme = useMarathonTheme();
     const currentMarathonId = Number(marathonId ?? selectedMarathon?.id);
     const [visible, setVisible] = useState(false);
 
@@ -257,7 +259,7 @@ export default function Games() {
     if (loading) {
         return (
             <ThemedView style={styles.centered}>
-                <ActivityIndicator size="large" color={Colors.purple[2]} />
+                <ActivityIndicator size="large" color={marathonTheme.primary} />
                 <ThemedText>{t('games.loadingGames')}</ThemedText>
             </ThemedView>
         );
@@ -289,7 +291,7 @@ export default function Games() {
 
                 {/* Add Game Score Card */}
                 <View style={styles.card}>
-                    <ThemedText style={styles.title}>{t('games.addGameScore')}</ThemedText>
+                    <ThemedText style={[styles.title, { color: marathonTheme.primary }]}>{t('games.addGameScore')}</ThemedText>
 
                     <ThemedText style={styles.label}>{t('games.selectFamily')}</ThemedText>
                     <View style={styles.pickerWrapper}>
@@ -324,16 +326,16 @@ export default function Games() {
                                 key={challenge.id}
                                 style={[
                                     styles.gameOption,
-                                    selectedChallengeId === challenge.id && styles.gameOptionSelected,
+                                    selectedChallengeId === challenge.id && [styles.gameOptionSelected, { borderColor: marathonTheme.primary }],
                                 ]}
                                 onPress={() => setSelectedChallengeId(challenge.id)}
                                 disabled={loading}
                             >
                                 <View style={styles.radioButton}>
-                                    {selectedChallengeId === challenge.id && <View style={styles.radioButtonInner} />}
+                                    {selectedChallengeId === challenge.id && <View style={[styles.radioButtonInner, { backgroundColor: marathonTheme.primary }]} />}
                                 </View>
                                 <ThemedText style={styles.gameLabel}>{challenge.title}</ThemedText>
-                                <ThemedText style={styles.gamePoints}>+{challenge.points} pts</ThemedText>
+                                <ThemedText style={[styles.gamePoints, { color: marathonTheme.primary }]}>+{challenge.points} pts</ThemedText>
                             </TouchableOpacity>
                         ))
                     )}
@@ -397,7 +399,7 @@ export default function Games() {
 
                 {/* Recent Entries Card */}
                 <View style={styles.recentCard}>
-                    <View style={styles.recentHeader}>
+                    <View style={[styles.recentHeader, { backgroundColor: marathonTheme.primary }]}>
                         <ThemedText style={styles.recentTitle}>{t('games.recentEntries')}</ThemedText>
                     </View>
                     <View style={styles.recentContent}>

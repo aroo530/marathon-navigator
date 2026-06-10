@@ -100,28 +100,27 @@ export default function ParticipantsScreen() {
             async function init() {
                 if (!userProfile?.id) return;
 
-                let fam = currentFamily;
-                if (!fam) {
-                    try {
-                        fam = await getCurrentFamily(currentMarathonId, userProfile.id);
-                        if (active && fam) setCurrentFamily(fam);
-                    } catch (e) {
-                        logger.error('Failed to load family', e);
-                    }
-                }
-
                 if (canPickFamily && currentMarathonId) {
                     try {
                         const families = await fetchMarathonFamilies(currentMarathonId);
                         if (active) {
                             setAllFamilies(families);
-                            setActiveFamilyId(prev => prev ?? fam?.id ?? families[0]?.id ?? null);
+                            setActiveFamilyId(prev => prev ?? families[0]?.id ?? null);
                         }
                     } catch (e) {
                         logger.error('Failed to load families', e);
                     }
-                } else if (fam && active) {
-                    setActiveFamilyId(fam.id);
+                } else {
+                    let fam = currentFamily;
+                    if (!fam) {
+                        try {
+                            fam = await getCurrentFamily(currentMarathonId, userProfile.id);
+                            if (active && fam) setCurrentFamily(fam);
+                        } catch (e) {
+                            logger.error('Failed to load family', e);
+                        }
+                    }
+                    if (fam && active) setActiveFamilyId(fam.id);
                 }
             }
 
@@ -180,10 +179,10 @@ export default function ParticipantsScreen() {
         setSubmitting(true);
         try {
             if (modalMode === 'create') {
-                if (!currentFamily?.id) {
+                if (!activeFamilyId) {
                     throw new Error('No family ID available');
                 }
-                await createParticipant('', formData.name, currentFamily.id);
+                await createParticipant('', formData.name, activeFamilyId);
                 showToast('success', t('users.participantCreated'));
             } else if (modalMode === 'edit') {
                 if (!selectedParticipant?.id) {
@@ -277,7 +276,7 @@ export default function ParticipantsScreen() {
                     >
                         <Text style={styles.contextLabel}>CURRENTLY MANAGING</Text>
                         <View style={styles.familyNameRow}>
-                            <View style={styles.activeDot} />
+                            <View style={[styles.activeDot, { backgroundColor: marathonTheme.primary }]} />
                             <Text style={styles.familyNameText}>
                                 {allFamilies.find(f => f.id === activeFamilyId)?.name ?? '—'}
                             </Text>
@@ -295,7 +294,7 @@ export default function ParticipantsScreen() {
                             key={family.id}
                             style={[
                                 styles.dropdownItem,
-                                activeFamilyId === family.id && styles.dropdownItemActive,
+                                activeFamilyId === family.id && [styles.dropdownItemActive, { backgroundColor: marathonTheme.tint }],
                             ]}
                             onPress={() => {
                                 setActiveFamilyId(family.id);
@@ -304,12 +303,12 @@ export default function ParticipantsScreen() {
                         >
                             <Text style={[
                                 styles.dropdownItemText,
-                                activeFamilyId === family.id && styles.dropdownItemTextActive,
+                                activeFamilyId === family.id && [styles.dropdownItemTextActive, { color: marathonTheme.primary }],
                             ]}>
                                 {family.name}
                             </Text>
                             {activeFamilyId === family.id && (
-                                <Ionicons name="checkmark" size={16} color={Colors.teal[2]} />
+                                <Ionicons name="checkmark" size={16} color={marathonTheme.primary} />
                             )}
                         </TouchableOpacity>
                     ))}
@@ -368,6 +367,16 @@ export default function ParticipantsScreen() {
                             </TouchableOpacity>
                         </View>
                         <View style={styles.modalContent}>
+                            {modalMode === 'create' && (
+                                <View style={[styles.familyBadgeRow, { backgroundColor: marathonTheme.tint }]}>
+                                    <Ionicons name="people-outline" size={16} color={marathonTheme.primary} />
+                                    <Text style={[styles.familyBadgeText, { color: marathonTheme.primary }]}>
+                                        {canPickFamily
+                                            ? (allFamilies.find(f => f.id === activeFamilyId)?.name ?? '—')
+                                            : (currentFamily?.name ?? '—')}
+                                    </Text>
+                                </View>
+                            )}
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>{t('users.name')} *</Text>
                                 <TextInput
@@ -562,6 +571,20 @@ const styles = StyleSheet.create({
     modalContent: {
         padding: Spacing.md
     } as ViewStyle,
+    familyBadgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.xs,
+        marginBottom: Spacing.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        backgroundColor: Colors.teal[0],
+        borderRadius: BorderRadius.medium,
+    } as ViewStyle,
+    familyBadgeText: {
+        fontSize: Font.sizes.body,
+        fontWeight: '600',
+    } as TextStyle,
     inputGroup: {
         marginBottom: Spacing.md
     } as ViewStyle,

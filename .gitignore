@@ -45,3 +45,6 @@ supabase/.temp/
 *.tsbuildinfo
 
 app-example
+
+# Build artifacts
+*.apk
