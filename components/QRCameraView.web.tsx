@@ -42,9 +42,37 @@ export default function QRCameraView({ active, onScan, onError }: QRCameraViewPr
       },
     );
 
-    scanner.start().catch((e) => onErrorRef.current?.(e));
+    let cancelled = false;
+
+    (async () => {
+      try {
+        await scanner.start();
+        if (cancelled) return;
+
+        // qr-scanner requests width:{min:1024} — a hard floor that can fail and
+        // drop the stream to the browser default (often 640x480). Re-request a
+        // high `ideal` (soft) resolution so we get the device's best up to 1080p.
+        // More pixels per QR = locks on from farther away / tolerates more blur.
+        const stream = video.srcObject as MediaStream | null;
+        const track = stream?.getVideoTracks?.()[0];
+        if (track) {
+          try {
+            const caps = track.getCapabilities?.();
+            await track.applyConstraints({
+              width: { ideal: caps?.width?.max ? Math.min(caps.width.max, 1920) : 1920 },
+              height: { ideal: caps?.height?.max ? Math.min(caps.height.max, 1080) : 1080 },
+            });
+          } catch {
+            /* device doesn't support applyConstraints — keep the default stream */
+          }
+        }
+      } catch (e) {
+        if (!cancelled) onErrorRef.current?.(e);
+      }
+    })();
 
     return () => {
+      cancelled = true;
       scanner.stop();
       scanner.destroy();
     };
