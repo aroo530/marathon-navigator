@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
-import { unlinkSync, writeFileSync } from "fs";
+import { unlinkSync, writeFileSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import QRCode from "qrcode";
@@ -20,8 +20,9 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
-// Card template is cached in memory after first upload — avoids re-sending it with every card request
-let cachedTemplate = null; // { buffer, width, height }
+// Template store — keyed by team name (lower-cased) or "__default__" for single-template mode.
+// Each value: { buffer, width, height }
+const teamTemplates = new Map();
 
 // ── Health ────────────────────────────────────────────────────────────────────
 
@@ -29,21 +30,26 @@ app.get("/api/health", (_, res) => res.json({ ok: true }));
 
 // ── Upload template ───────────────────────────────────────────────────────────
 
+// Helper: parse + store a template buffer under a given key
+async function storeTemplate(key, templateBase64) {
+  const raw = Buffer.from(templateBase64, "base64");
+  let buffer;
+  try {
+    buffer = await sharp(raw).png().toBuffer();
+  } catch (e) {
+    throw new Error(`Template format not supported: ${e.message}. Please export your template as PNG or JPG.`);
+  }
+  const { width, height } = await sharp(buffer).metadata();
+  teamTemplates.set(key, { buffer, width, height });
+  return { width, height };
+}
+
+// ── Upload single (default) template ─────────────────────────────────────────
+
 app.post("/api/set-template", async (req, res) => {
   try {
     const { templateBase64 } = req.body;
-    const raw = Buffer.from(templateBase64, "base64");
-    // Normalise to PNG — rejects unsupported formats (HEIC etc.) at upload time
-    let buffer;
-    try {
-      buffer = await sharp(raw).png().toBuffer();
-    } catch (e) {
-      return res.status(400).json({
-        error: `Template format not supported: ${e.message}. Please export your template as PNG or JPG.`,
-      });
-    }
-    const { width, height } = await sharp(buffer).metadata();
-    cachedTemplate = { buffer, width, height };
+    const { width, height } = await storeTemplate("__default__", templateBase64);
     res.json({
       ok: true,
       width,
@@ -51,8 +57,42 @@ app.post("/api/set-template", async (req, res) => {
       defaultLayout: defaultLayout(width, height),
     });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(e.message.includes("not supported") ? 400 : 500).json({ error: e.message });
   }
+});
+
+// ── Upload per-team template ──────────────────────────────────────────────────
+
+app.post("/api/set-team-template", async (req, res) => {
+  try {
+    const { team, templateBase64 } = req.body;
+    if (!team) return res.status(400).json({ error: "team name required" });
+    const key = team.trim().toLowerCase();
+    const { width, height } = await storeTemplate(key, templateBase64);
+    res.json({
+      ok: true,
+      team: key,
+      width,
+      height,
+      defaultLayout: defaultLayout(width, height),
+    });
+  } catch (e) {
+    res.status(e.message.includes("not supported") ? 400 : 500).json({ error: e.message });
+  }
+});
+
+// ── List which teams have a template uploaded ─────────────────────────────────
+
+app.get("/api/team-templates", (_req, res) => {
+  const uploaded = [...teamTemplates.keys()];
+  res.json({ uploaded });
+});
+
+// ── Clear all team templates ──────────────────────────────────────────────────
+
+app.delete("/api/clear-team-templates", (_req, res) => {
+  teamTemplates.clear();
+  res.json({ ok: true });
 });
 
 // ── Import CSV rows → Supabase ────────────────────────────────────────────────
@@ -262,14 +302,25 @@ app.get("/api/proxy-photo", async (req, res) => {
 
 app.post("/api/generate-card", async (req, res) => {
   try {
-    if (!cachedTemplate)
+    if (teamTemplates.size === 0)
       return res
         .status(400)
         .json({ error: "No template uploaded. Upload a template first." });
 
     const { participant, layout, prompt, photoBase64 } = req.body;
     const { id, name, family, photo_url, familyId } = participant;
-    const { buffer: tmpl, width: cardW, height: cardH } = cachedTemplate;
+
+    // Pick team-specific template, fall back to __default__
+    const teamKey = (family ?? "").trim().toLowerCase();
+    const tmplEntry =
+      teamTemplates.get(teamKey) ??
+      teamTemplates.get("__default__") ??
+      [...teamTemplates.values()][0];
+
+    if (!tmplEntry)
+      return res.status(400).json({ error: `No template found for team "${family}".` });
+
+    const { buffer: tmpl, width: cardW, height: cardH } = tmplEntry;
     const L = layout || defaultLayout(cardW, cardH);
 
     const composites = [];
@@ -303,21 +354,30 @@ app.post("/api/generate-card", async (req, res) => {
     }
     if (!photoBuffer && photo_url) {
       try {
-        const fetchUrl = normalisePhotoUrl(photo_url);
-        const buf = await fetch(fetchUrl, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-          },
-        }).then((r) => {
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.arrayBuffer();
-        });
-        photoBuffer = await sharp(Buffer.from(buf)).png().toBuffer();
+        const isLocalPath = photo_url.startsWith('/') || photo_url.startsWith('~');
+        if (isLocalPath) {
+          // Read directly from disk — no HTTP involved
+          const resolved = photo_url.startsWith('~')
+            ? photo_url.replace('~', process.env.HOME || '/Users/' + process.env.USER)
+            : photo_url;
+          photoBuffer = await sharp(readFileSync(resolved)).png().toBuffer();
+        } else {
+          const fetchUrl = normalisePhotoUrl(photo_url);
+          const buf = await fetch(fetchUrl, {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+              Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+            },
+          }).then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.arrayBuffer();
+          });
+          photoBuffer = await sharp(Buffer.from(buf)).png().toBuffer();
+        }
       } catch (e) {
         console.warn(
-          `  Photo download/decode failed for "${name}": ${e.message}`,
+          `  Photo load failed for "${name}": ${e.message}`,
         );
       }
     }

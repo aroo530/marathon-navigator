@@ -94,6 +94,8 @@ section h2 { font-size: 19px; font-weight: 700; margin-bottom: 20px; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn.ghost { background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-weight: 600; font-size: 13px; }
 .btn.ghost:hover { border-color: var(--muted); color: var(--text); background: var(--bg); }
+.btn.ghost.skip { border-color: var(--amber); color: var(--amber); }
+.btn.ghost.skip:hover { background: rgba(245,158,11,0.08); border-color: var(--amber); color: var(--amber); }
 
 /* ── Navigation row ── */
 .nav-row {
@@ -323,4 +325,95 @@ tr:last-child td { border-bottom: none; }
   .le-controls {
     flex: unset;
   }
+}
+
+/* ── Mode toggle switch ── */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.mode-toggle .mode-active { color: var(--text); }
+
+.toggle-btn {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.toggle-btn.on { background: var(--accent); }
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  display: block;
+}
+.toggle-btn.on .toggle-knob { transform: translateX(20px); }
+
+/* ── Team template panel ── */
+.team-template-panel { margin-top: 4px; }
+
+.team-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.team-slot {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+.team-slot.uploaded { border-color: var(--green); }
+
+.team-slot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.team-slot-indicator {
+  font-size: 15px;
+  color: var(--muted);
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.team-slot.uploaded .team-slot-indicator { color: var(--green); }
+
+.team-slot-preview {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.file-btn.small {
+  padding: 6px 12px;
+  font-size: 12px;
+  text-align: center;
 }

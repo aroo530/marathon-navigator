@@ -50,9 +50,19 @@ export default function App() {
   const [cards, setCards]             = useState([]); // [{participant, status, cardBase64, error}]
   const [editingIdx, setEditingIdx]   = useState(null); // index of card being edited
   const [editPrompt, setEditPrompt]   = useState('');
+  // ── Team template mode ───────────────────────────────────────────────────────
+  const [teamMode, setTeamMode]       = useState(false);
+  // Map of team key (lowercased) → { base64, width, height } or null
+  const [teamTemplateMap, setTeamTemplateMap] = useState({});
+  const teamTemplateRefs = useRef({});
   const templateRef = useRef();
   const csvRef = useRef();
   const configRef = useRef();
+
+  // Unique teams derived from CSV rows (preserving original casing for display)
+  const uniqueTeams = [...new Map(
+    csvRows.map(r => [r.family.toLowerCase(), r.family])
+  ).values()];
 
   // ── Step 0: CSV ─────────────────────────────────────────────────────────────
 
@@ -113,6 +123,49 @@ export default function App() {
       setLastWasDryRun(dryRun);
       setStep(2);
     }
+  }
+
+  // ── Skip Supabase import — use CSV rows directly ──────────────────────────
+
+  function handleSkipImport() {
+    const mapped = csvRows.map(r => ({
+      id:       null,
+      familyId: null,
+      name:     r.name,
+      family:   r.family,
+      photo_url: r.photo_url || null,
+    }));
+    setParticipants(mapped);
+    setImportLog([{ text: `⚡ Skipped Supabase — using ${mapped.length} rows from CSV directly.`, type: 'info' }]);
+    setLastWasDryRun(false);
+    setStep(2);
+  }
+
+  // ── Step 2: Team template upload ────────────────────────────────────────────
+
+  async function handleTeamTemplateFile(team, e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const base64 = ev.target.result.split(',')[1];
+      const res = await fetch('/api/set-team-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team, templateBase64: base64 }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTeamTemplateMap(prev => ({
+          ...prev,
+          [team.toLowerCase()]: { base64, width: data.width, height: data.height },
+        }));
+        // Use the first uploaded team template to seed the layout
+        setLayoutObj(prev => prev ?? data.defaultLayout);
+        setJsonDraft(prev => prev || JSON.stringify(data.defaultLayout, null, 2));
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   // ── Step 2: Template upload ──────────────────────────────────────────────────
@@ -273,6 +326,10 @@ export default function App() {
     setJsonDraft('');
     setAiPrompt('');
     setCards([]);
+    setTeamMode(false);
+    setTeamTemplateMap({});
+    // Clear server-side templates too
+    fetch('/api/clear-team-templates', { method: 'DELETE' }).catch(() => {});
     if (csvRef.current) csvRef.current.value = '';
     if (templateRef.current) templateRef.current.value = '';
   }
@@ -294,6 +351,15 @@ export default function App() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   const doneCount = cards.filter(c => c.status === 'done').length;
+
+  // In team mode, ready when every unique team has a template uploaded
+  const allTeamsReady = teamMode
+    ? uniqueTeams.every(t => teamTemplateMap[t.toLowerCase()])
+    : !!template;
+
+  // First uploaded team template (to drive the layout preview)
+  const firstTeamTmpl = Object.values(teamTemplateMap)[0] ?? null;
+  const previewTemplate = teamMode ? firstTeamTmpl : template;
 
   return (
     <div className="app">
@@ -373,6 +439,13 @@ export default function App() {
                   >
                     🔍 Dry Run
                   </button>
+                  <button
+                    className="btn ghost skip"
+                    title="Skip Supabase — generate cards directly from the CSV without syncing to the database"
+                    onClick={handleSkipImport}
+                  >
+                    ⚡ Skip Import
+                  </button>
                   <button className="btn ghost" onClick={handleStartOver}>
                     ↺ Start Over
                   </button>
@@ -410,23 +483,102 @@ export default function App() {
 
             <div className="field">
               <label>Card Template (PNG / JPG)</label>
-              <div className="row gap">
-                <label className="file-btn">
-                  Choose Template
-                  <input type="file" accept="image/*" ref={templateRef} onChange={handleTemplateFile} hidden />
-                </label>
-                <label className="file-btn" title="Load a saved card-config.json">
-                  📂 Load Config
-                  <input type="file" accept=".json" ref={configRef} onChange={handleLoadConfig} hidden />
-                </label>
-                {layoutObj && (
-                  <button type="button" className="file-btn" onClick={handleSaveConfig} title="Save current layout + prompt as JSON">
-                    💾 Save Config
-                  </button>
-                )}
+
+              {/* ── Mode toggle ── */}
+              <div className="mode-toggle">
+                <span className={!teamMode ? 'mode-active' : ''}>Single Template</span>
+                <button
+                  type="button"
+                  className={`toggle-btn ${teamMode ? 'on' : ''}`}
+                  onClick={() => {
+                    const next = !teamMode;
+                    setTeamMode(next);
+                    // Clear server templates on mode switch
+                    fetch('/api/clear-team-templates', { method: 'DELETE' }).catch(() => {});
+                    if (!next) setTeamTemplateMap({});
+                    else setTemplate(null);
+                  }}
+                  aria-label="Toggle team template mode"
+                >
+                  <span className="toggle-knob" />
+                </button>
+                <span className={teamMode ? 'mode-active' : ''}>Team Template Mode</span>
               </div>
-              {template && (
+
+              {/* ── Single template upload ── */}
+              {!teamMode && (
+                <div className="row gap">
+                  <label className="file-btn">
+                    Choose Template
+                    <input type="file" accept="image/*" ref={templateRef} onChange={handleTemplateFile} hidden />
+                  </label>
+                  <label className="file-btn" title="Load a saved card-config.json">
+                    📂 Load Config
+                    <input type="file" accept=".json" ref={configRef} onChange={handleLoadConfig} hidden />
+                  </label>
+                  {layoutObj && (
+                    <button type="button" className="file-btn" onClick={handleSaveConfig} title="Save current layout + prompt as JSON">
+                      💾 Save Config
+                    </button>
+                  )}
+                </div>
+              )}
+              {!teamMode && template && (
                 <p className="hint mt">{template.width} × {template.height} px — layout auto-filled below</p>
+              )}
+
+              {/* ── Per-team template upload ── */}
+              {teamMode && (
+                <div className="team-template-panel">
+                  <p className="hint">
+                    Upload one background image per team. Layout, QR, and text settings are shared across all teams.
+                  </p>
+                  {uniqueTeams.length === 0 && (
+                    <p className="hint" style={{ color: 'var(--amber)' }}>⚠ No teams found — go back and upload a CSV first.</p>
+                  )}
+                  <div className="team-template-grid">
+                    {uniqueTeams.map(team => {
+                      const key = team.toLowerCase();
+                      const uploaded = !!teamTemplateMap[key];
+                      return (
+                        <div key={team} className={`team-slot ${uploaded ? 'uploaded' : ''}`}>
+                          <div className="team-slot-header">
+                            <span className="team-slot-indicator">{uploaded ? '✓' : '○'}</span>
+                            <strong>{team}</strong>
+                          </div>
+                          {uploaded && (
+                            <img
+                              className="team-slot-preview"
+                              src={`data:image/png;base64,${teamTemplateMap[key].base64}`}
+                              alt={`${team} template preview`}
+                            />
+                          )}
+                          <label className="file-btn small">
+                            {uploaded ? '↺ Replace' : 'Choose Image'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              ref={el => teamTemplateRefs.current[key] = el}
+                              onChange={e => handleTeamTemplateFile(team, e)}
+                              hidden
+                            />
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="row gap" style={{ marginTop: '0.75rem' }}>
+                    <label className="file-btn" title="Load a saved card-config.json">
+                      📂 Load Config
+                      <input type="file" accept=".json" ref={configRef} onChange={handleLoadConfig} hidden />
+                    </label>
+                    {layoutObj && (
+                      <button type="button" className="file-btn" onClick={handleSaveConfig} title="Save current layout + prompt as JSON">
+                        💾 Save Config
+                      </button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -441,15 +593,15 @@ export default function App() {
               />
             </div>
 
-            {layoutObj && template && (
+            {layoutObj && previewTemplate && (
               <div className="field">
                 <label>
                   Layout Config <span className="optional">(drag elements to position, resize with corner handles)</span>
                 </label>
                 <LayoutEditor
-                  templateBase64={template.base64}
-                  templateWidth={template.width}
-                  templateHeight={template.height}
+                  templateBase64={previewTemplate.base64}
+                  templateWidth={previewTemplate.width}
+                  templateHeight={previewTemplate.height}
                   layout={layoutObj}
                   onChange={newLayout => {
                     setLayoutObj(newLayout);
@@ -495,7 +647,7 @@ export default function App() {
             <div className="nav-row">
               <button
                 className="btn primary"
-                disabled={!template || !layoutObj}
+                disabled={!allTeamsReady || !layoutObj}
                 onClick={handleGenerate}
               >
                 {lastWasDryRun ? '🔍 Preview ' : 'Generate All '}{participants.length} Cards →
