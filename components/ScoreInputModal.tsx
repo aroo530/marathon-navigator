@@ -148,6 +148,7 @@ export default function ScoreInputModal({
               <TextInput
                 style={styles.input}
                 keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'number-pad'}
+                inputMode="decimal"
                 value={manualPoints}
                 onChangeText={(text) => {
                   if (isValidDecimal(text)) setManualPoints(text);
