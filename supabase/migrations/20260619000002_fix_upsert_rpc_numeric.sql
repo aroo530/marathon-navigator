@@ -1,5 +1,8 @@
 -- Fix upsert_family_score: change p_points_awarded and v_points_awarded
 -- from integer to numeric(10,2) to support decimal scores.
+-- Drop the old integer-typed overload first to avoid ambiguity.
+
+DROP FUNCTION IF EXISTS public.upsert_family_score(integer, integer, integer, integer, numeric);
 
 CREATE OR REPLACE FUNCTION public.upsert_family_score(
     p_family_id          integer,
