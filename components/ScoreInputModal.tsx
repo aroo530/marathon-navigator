@@ -10,11 +10,17 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const isValidDecimal = (value: string): boolean => {
+  if (value === '') return true;
+  return /^\d+(\.\d{0,2})?$/.test(value);
+};
 
 type Props = {
   visible: boolean;
@@ -84,9 +90,12 @@ export default function ScoreInputModal({
         const percentage = (members / totalFamilyMembers) * 100;
         await onSubmit(challenge.points, percentage);
       } else {
-        const points = parseInt(manualPoints, 10);
+        if (!isValidDecimal(manualPoints) || manualPoints === '') {
+          return Alert.alert(t('common.error', 'Error'), t('challenges.invalidDecimal', 'Please enter a number with up to 2 decimal places'));
+        }
+        const points = parseFloat(manualPoints);
         if (isNaN(points) || points < 0 || points > challenge.points) {
-          return Alert.alert(t('common.error', 'Error'), t('challenges.invalidPoints', `Please enter a number between 0 and ${challenge.points}`));
+          return Alert.alert(t('common.error', 'Error'), t('challenges.invalidPoints', `Please enter a number between 0 and ${challenge.points.toFixed(2)}`));
         }
         await onSubmit(points);
       }
@@ -138,10 +147,12 @@ export default function ScoreInputModal({
               </ThemedText>
               <TextInput
                 style={styles.input}
-                keyboardType="number-pad"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'number-pad'}
                 value={manualPoints}
-                onChangeText={setManualPoints}
-                placeholder={t('challenges.enterPointsPlaceholder', `Enter points (0-${challenge.points})`)}
+                onChangeText={(text) => {
+                  if (isValidDecimal(text)) setManualPoints(text);
+                }}
+                placeholder={t('challenges.enterPointsPlaceholder', `Enter points (0-${challenge.points.toFixed(2)})`)}
               />
               <ThemedText type="default" style={styles.maxPoints}>
                 {t('challenges.maxPoints', 'Maximum points available:')} {challenge.points}
